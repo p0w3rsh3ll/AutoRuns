@@ -1336,6 +1336,21 @@ Begin {
                         }
                     } # hklm or hkcu
                 } 
+                # Microsoft Office Memory Corruption Vulnerability (CVE-2015-1641)
+                'HKLM','HKCU' | ForEach-Object {
+                    $root = $_
+                    $key = "$($root):\SOFTWARE\Microsoft\Office test\Special\Perf"
+                    if (Test-Path "$($root):\SOFTWARE\Microsoft\Office test\Special\Perf") {
+                        if ((Get-ItemProperty -Path "$($root):\SOFTWARE\Microsoft\Office test\Special\Perf" -Name '(default)' -ErrorAction SilentlyContinue).'(default)') {
+	                        [pscustomobject]@{
+	                            Path = $key
+	                            Item = '(default)'
+                                Value = (Get-ItemProperty -Path "$($root):\SOFTWARE\Microsoft\Office test\Special\Perf" -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
+                                Category = 'Office Addins';
+	                        }
+                        }
+                    }
+                }                
                 #endregion Office Addins
             }
             if ($All -or $PrintMonitorDLLs) {
@@ -2236,4 +2251,7 @@ Get-PSAutorun -OfficeAddins | Format-Table -Property Path,ImagePath,Category
     +HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnceEx
     +HKCU\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\RunOnceEx
     +HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx
+# From 13.51 to 13.61
+    +HKLM\SOFTWARE\Microsoft\Office test\Special\Perf\(Default)
+    +HKCU\SOFTWARE\Microsoft\Office test\Special\Perf\(Default)
 #>
