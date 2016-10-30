@@ -460,6 +460,14 @@ Begin {
 
         )
         Begin {
+            ## Add 'All' if nothing else was supplied
+            $parametersToIgnore = ("ShowFileHash","VerifyDigitalSignature") +
+                [System.Management.Automation.PSCmdlet]::CommonParameters +
+                [System.Management.Automation.PSCmdlet]::OptionalCommonParameters
+            if(($PSBoundParameters.Keys | ? { $_ -notin $parametersToIgnore }).Count -eq 0)
+            {
+                $All = [switch]::Present
+            }
         }
         Process {
             if ($All -or $BootExecute) {
@@ -2160,30 +2168,38 @@ Begin {
                 If ($VerifyDigitalSignature) {
                     if ($_.ImagePath) {
                         If (Test-Path -Path $_.ImagePath -PathType Leaf) {
-                            $_ | Add-Member -MemberType ScriptProperty -Name Signed -Value ({
-                                try {
-                                    $signature = Get-AuthenticodeSignature -FilePath $($this.ImagePath) -ErrorAction Stop
-                                    Switch ($signature.Status) {
-                                        'Valid' {
-                                            $true
-                                            break
-                                        }
-                                        'NotSigned' {
-                                            $false
-                                            break
-                                        }
-                                        default {
-                                            $false
-                                        }
-                                    }
-
-                                } catch {
+                            
+                            ## Add the signature status to the entry
+                            $signature = Get-AuthenticodeSignature -FilePath $_.ImagePath -ErrorAction Stop
+                            $signed = switch ($signature.Status) {
+                                'Valid' {
+                                    $true
+                                    break
+                                }
+                                'NotSigned' {
+                                    $false
+                                    break
+                                }
+                                default {
                                     $false
                                 }
-                            }) -Force -PassThru
+                            }
+                            $_ = $_ | Add-Member -MemberType NoteProperty -Name Signed -Value $signed -Force -PassThru
+                            
+                            ## Add a note whether this is an OS binary to allow for easy filtering:
+                            ## Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
+                            if($signature.IsOSBinary)
+                            {
+                                $_ = $_ | Add-Member -MemberType NoteProperty -Name IsOSBInary -Value $signature.IsOSBinary -Force -PassThru
+                            }
+
+                            ## Add the signer itself
+                            $_ | Add-Member -MemberType NoteProperty -Name Publisher -Value $signature.SignerCertificate.Subject -Force -PassThru
                         }
                     } else {
-                        $_ | Add-Member -MemberType NoteProperty -Name Signed -Value $null -Force -PassThru
+                        $_ = $_ | Add-Member -MemberType NoteProperty -Name Signed -Value $null -Force -PassThru
+                        $_ = $_ | Add-Member -MemberType NoteProperty -Name IsOSBinary -Value $null -Force -PassThru
+                        $_ | Add-Member -MemberType NoteProperty -Name Publisher -Value $null -Force -PassThru
                     }
                 } else {
                     $_
