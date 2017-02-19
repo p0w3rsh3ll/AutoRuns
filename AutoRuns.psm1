@@ -1367,8 +1367,15 @@ Begin {
 	            $Category = @{ Category = 'Print Monitors'}
 	            $key = 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors'
                 (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
-		            Get-RegValue -Path "$key\$($_)" -Name 'Driver' @Category	
+		            Get-RegValue -Path "$key\$($_)" -Name 'Driver' @Category
 	            }
+
+                Write-Verbose -Message 'Looking for Print Providers DLLs entries'
+                $key = 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Providers'
+                (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
+		            Get-RegValue -Path "$key\$($_)" -Name 'Name' @Category
+	            }
+
                 #endregion Print monitors
             }
             if ($All -or $LSAsecurityProviders) {
@@ -2272,4 +2279,6 @@ Get-PSAutorun -OfficeAddins | Format-Table -Property Path,ImagePath,Category
     +HKCU\SOFTWARE\Microsoft\Office test\Special\Perf\(Default)
 # From 13.61 to 13.62
     +HKLM\SYSTEM\CurrentControlSet\Control\Lsa\Security Packages
+# From 13.62 to 13.7
+    +HKLM\SYSTEM\CurrentControlSet\Control\Print\Providers
 #>
