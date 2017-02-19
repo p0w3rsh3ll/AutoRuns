@@ -1586,7 +1586,20 @@ Begin {
                             Category = 'WMI' ;
                         }
                 }
-
+                # List recursiveley registered and resolved WMI providers
+                Get-WmiObject -Namespace root -Recurse -Class __Provider -List -ErrorAction SilentlyContinue | ForEach-Object {
+                    Get-WmiObject -Namespace $_.__NAMESPACE -Class $_.__CLASS -ErrorAction SilentlyContinue | ForEach-Object {
+                        Write-Verbose -Message "Found provider clsid $($_.CLSID) from under the $($_.__NAMESPACE) namespace"
+                        if (($clsid = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Classes\CLSID\$($_.CLSID)\InprocServer32" -Name '(default)' -ErrorAction SilentlyContinue).'(default)')) {
+                            [pscustomobject]@{
+                                Path = $_.__PATH ;
+                                Item = $_.Name
+                                Value = $clsid
+                                Category = 'WMI' ;
+                            }
+                        }
+                    }
+                }
             }
         }
         End {
@@ -2197,7 +2210,7 @@ Begin {
                             ## Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
                             if($signature.IsOSBinary)
                             {
-                                $_ = $_ | Add-Member -MemberType NoteProperty -Name IsOSBInary -Value $signature.IsOSBinary -Force -PassThru
+                                $_ = $_ | Add-Member -MemberType NoteProperty -Name IsOSBinary -Value $signature.IsOSBinary -Force -PassThru
                             }
 
                             ## Add the signer itself
@@ -2247,7 +2260,8 @@ Get-PSAutorun -All -ShowFileHash -VerifyDigitalSignature
 Get-PSAutorun -ServicesAndDrivers | ? path -match 'OSE' | fl *
 Get-PSAutorun -ServicesAndDrivers | ? path -match 'sysmon' | fl *
 Get-PSAutorun -ServicesAndDrivers | ? path -match 'psexesvc' | fl *
-Get-PSAutorun -OfficeAddins | Format-Table -Property Path,ImagePath,Category 
+Get-PSAutorun -OfficeAddins | Format-Table -Property Path,ImagePath,Category
+Get-PSAutorun -WMI -VerifyDigitalSignature | Where { -not $_.isOSBinary }
 
 # From 11.70 to 12.0
     +HKLM\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig\Security Packages
