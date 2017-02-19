@@ -2270,4 +2270,6 @@ Get-PSAutorun -OfficeAddins | Format-Table -Property Path,ImagePath,Category
 # From 13.51 to 13.61
     +HKLM\SOFTWARE\Microsoft\Office test\Special\Perf\(Default)
     +HKCU\SOFTWARE\Microsoft\Office test\Special\Perf\(Default)
+# From 13.61 to 13.62
+    +HKLM\SYSTEM\CurrentControlSet\Control\Lsa\Security Packages
 #>
