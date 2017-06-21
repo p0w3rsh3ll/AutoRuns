@@ -11,7 +11,7 @@ AutoRuns PowerShell Module
 * [Issues](#issues)
 * [Todo](#Todo)
 * [Credits](#Credits)
-* [Original Autoruns.exe release history](#Autoruns history)
+* [Original Autoruns.exe release history](#AutorunsHistory)
 
 <a name="Usage"/>
 
@@ -28,7 +28,7 @@ Find-Module -Name Autoruns -Repository PSGallery
 ```
 Version    Name                                Repository           Description
 -------    ----                                ----------           -----------                                   
-13.61      AutoRuns                            PSGallery            AutoRuns is a module that will help do live incident response and enumerate autoruns artifacts that may be use...
+13.61      AutoRuns                            PSGallery            AutoRuns is a module ...
 ```
 
 ```powershell
@@ -36,7 +36,7 @@ Version    Name                                Repository           Description
 Save-Module -Name AutoRuns -Repository PSGallery -Path ~/Downloads
 ```
 
-Review the content of the module, I mean the code to make sure it's trustworthy
+Stop and please review the content of the module, I mean the code to make sure it's trustworthy :-)
 
 ```powershell
 # Import the module
@@ -65,7 +65,10 @@ Function        Get-PSAutorun                                      13.61      Au
 Get-Command Get-PSAutorun -Syntax
 ```
 ```
-Get-PSAutorun [-All] [-BootExecute] [-AppinitDLLs] [-ExplorerAddons] [-SidebarGadgets] [-ImageHijacks] [-InternetExplorerAddons] [-KnownDLLs] [-Logon] [-Winsock] [-Codecs] [-OfficeAddins] [-PrintMonitorDLLs] [-LSAsecurityProviders] [-ServicesAndDrivers] [-ScheduledTasks] [-Winlogon] [-WMI] [-ShowFileHash] [-VerifyDigitalSignature] [<CommonParameters>]
+Get-PSAutorun [-All] [-BootExecute] [-AppinitDLLs] [-ExplorerAddons] [-SidebarGadgets] [-ImageHijacks]
+[-InternetExplorerAddons] [-KnownDLLs] [-Logon] [-Winsock] [-Codecs] [-OfficeAddins] 
+[-PrintMonitorDLLs] [-LSAsecurityProviders] [-ServicesAndDrivers] [-ScheduledTasks] [-Winlogon] 
+[-WMI] [-ShowFileHash] [-VerifyDigitalSignature] [<CommonParameters>]
 ```
 
 ### View examples provided in the help
@@ -96,32 +99,32 @@ SYNOPSIS
 <a name="Issues"/>
 
 ## Issues
- * What are registrations in the WMI\Default namespace introduced in Autoruns v13.7? see c7eab48c77f578e0dcff61d2b46a479b28225a56
+ * What are registrations in the WMI\Default namespace introduced in Autoruns v13.7? see [c7eab48c77f578e0dcff61d2b46a479b28225a56](https://github.com/p0w3rsh3ll/AutoRuns/commit/c7eab48c77f578e0dcff61d2b46a479b28225a56)
 
 <a name="Todo"/>
 
 ## Todo
 
-### Coding best practices
+#### Coding best practices
 - [x] Use PSScriptAnalyzer module to validate the code follows best practices
 - [ ] Write Pester tests for this module
 
-### OS and Software compatibility
+#### OS and Software compatibility
 - [ ] Test the module on Nano and get rid of Add-Member cmdlet
 - [ ] Test the module on various versions of Windows 10
 - [ ] Test the module on Windows RT
 - [ ] Review Office Add-ins code with Office x86 and x64 versions
 
-### General improvements
+#### General improvements
 - [ ] Write a better implementation of the internal Get-RegValue function
 - [ ] Review and improve regex used by the internal Get-PSPrettyAutorun function (ex: external paths)
 
-### New features
+#### New features
 - [ ] Replace HKCU and add an option to specify what user hive is being investigated
 - [ ] Add timestamps on registry keys
 - [ ] Analyze an offline image of Windows
 
-### Help
+#### Help
 - [ ] More examples
 - [ ] Use external help? 
 - [ ] Internationalization?
@@ -132,14 +135,14 @@ SYNOPSIS
 
 ## Credits
 Thanks go to:
-* __@LeeHolmes__: 
-    * Improving common parameters 7fe8e7ea983325b5543da1300cb8a4636c7062ef
-    * Filtering OS binaries 8efb0fad4585ecd4517b55ff5b5cec91f7dd364a
+* __ @LeeHolmes __: 
+    * Improving common parameters [7fe8e7ea983325b5543da1300cb8a4636c7062ef](https://github.com/p0w3rsh3ll/AutoRuns/commit/7fe8e7ea983325b5543da1300cb8a4636c7062ef)
+    * Filtering OS binaries [8efb0fad4585ecd4517b55ff5b5cec91f7dd364a](https://github.com/p0w3rsh3ll/AutoRuns/commit/8efb0fad4585ecd4517b55ff5b5cec91f7dd364a)
 ```powershell
 Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 ```
 
-<a name="Autoruns history"/>
+<a name="AutorunsHistory"/>
 
 ## Original [Autoruns.exe](https://technet.microsoft.com/en-us/sysinternals/bb963902.aspx) from Mark Russinovich
 
@@ -164,7 +167,7 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 [Autoruns v13.2](https://blogs.technet.microsoft.com/sysinternals/2015/03/10/update-livekd-v5-4-autoruns-v13-2-sigcheck-v2-2-process-explorer-v16-05/)
 >In addition to bug fixes to CSV and XML output, Autorunsc introduces import-hash reporting, and Autoruns now excludes command-line and other host processes from the Microsoft and Windows filters.
 
-[Autoruns v13.01] (https://blogs.technet.microsoft.com/sysinternals/2015/02/09/update-autoruns-v13-01/)
+[Autoruns v13.01](https://blogs.technet.microsoft.com/sysinternals/2015/02/09/update-autoruns-v13-01/)
 >This release fixes a bug in v13 that caused autostart entry lines not to show when you enter a filter string into the toolbar's filter control
 
 [Autoruns v13.0](https://blogs.technet.microsoft.com/sysinternals/2015/01/29/update-autoruns-v13-0/)
