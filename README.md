@@ -135,7 +135,7 @@ SYNOPSIS
 
 ## Credits
 Thanks go to:
-* ** @LeeHolmes **: 
+* **[@LeeHolmes](https://github.com/LeeHolmes/)**: 
     * Improving common parameters [7fe8e7ea983325b5543da1300cb8a4636c7062ef](https://github.com/p0w3rsh3ll/AutoRuns/commit/7fe8e7ea983325b5543da1300cb8a4636c7062ef)
     * Filtering OS binaries [8efb0fad4585ecd4517b55ff5b5cec91f7dd364a](https://github.com/p0w3rsh3ll/AutoRuns/commit/8efb0fad4585ecd4517b55ff5b5cec91f7dd364a)
 ```powershell
