@@ -28,7 +28,7 @@ Find-Module -Name Autoruns -Repository PSGallery
 ```
 Version    Name                                Repository           Description
 -------    ----                                ----------           -----------                                   
-13.61      AutoRuns                            PSGallery            AutoRuns is a module ...
+13.71      AutoRuns                            PSGallery            AutoRuns is a module ...
 ```
 
 ```powershell
@@ -38,9 +38,20 @@ Save-Module -Name AutoRuns -Repository PSGallery -Path ~/Downloads
 
 Stop and please review the content of the module, I mean the code to make sure it's trustworthy :-)
 
+You can also verify that the SHA256 hashes of downloaded files match those stored in the catalog file
+```powershell
+$HT = @{
+    CatalogFilePath = "~/Downloads/AutoRuns/13.71/AutoRuns.cat"
+    Path = "~/Downloads/AutoRuns/13.71"
+    Detailed = $true
+    FilesToSkip = 'PSGetModuleInfo.xml'
+}
+Test-FileCatalog @HT
+```
+
 ```powershell
 # Import the module
-Import-Module ~/Downloads/AutoRuns/13.61/AutoRuns.psd1 -Force -Verbose
+Import-Module ~/Downloads/AutoRuns/13.71/AutoRuns.psd1 -Force -Verbose
 ```
 
 <a name="Functions"/>
@@ -52,7 +63,7 @@ Get-Command -Module AutoRuns
 ```
 CommandType     Name                                               Version    Source
 -----------     ----                                               -------    ------
-Function        Get-PSAutorun                                      13.61      AutoRuns
+Function        Get-PSAutorun                                      13.71      AutoRuns
 ```
 
 
