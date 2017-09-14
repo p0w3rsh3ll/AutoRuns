@@ -464,7 +464,7 @@ Begin {
             $parametersToIgnore = ("ShowFileHash","VerifyDigitalSignature") +
                 [System.Management.Automation.PSCmdlet]::CommonParameters +
                 [System.Management.Automation.PSCmdlet]::OptionalCommonParameters
-            if(($PSBoundParameters.Keys | ? { $_ -notin $parametersToIgnore }).Count -eq 0)
+            if(($PSBoundParameters.Keys | Where-Object { $_ -notin $parametersToIgnore }).Count -eq 0)
             {
                 $All = [switch]::Present
             }
