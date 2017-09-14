@@ -975,6 +975,10 @@ Begin {
                 # Winlogon
                 Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name 'VmApplet','Userinit','Shell','TaskMan','AppSetup' @Category
 
+                # UserInitMprLogonScript
+                if (Test-Path -Path 'HKLM:\Environment' -PathType Container) {
+                    Get-RegValue -Path 'HKLM:\Environment' -Name 'UserInitMprLogonScript' @Category
+                }
                 # GPExtensions
 	            $key = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\GPExtensions'
                 if (Test-Path -Path $key -PathType Container) {
@@ -1107,6 +1111,11 @@ Begin {
 
                         }
                     }
+                }
+
+                # UserInitMprLogonScript
+                if (Test-Path -Path 'HKCU:\Environment' -PathType Container) {
+                    Get-RegValue -Path 'HKCU:\Environment' -Name 'UserInitMprLogonScript' @Category
                 }
 
                 # Shell override by GPO
@@ -2295,4 +2304,7 @@ Get-PSAutorun -WMI -VerifyDigitalSignature | Where { -not $_.isOSBinary }
     +HKLM\SYSTEM\CurrentControlSet\Control\Lsa\Security Packages
 # From 13.62 to 13.7
     +HKLM\SYSTEM\CurrentControlSet\Control\Print\Providers
+# From 13.71 to 13.80
+    +HKCU\Environment\UserInitMprLogonScript
+    +HKLM\Environment\UserInitMprLogonScript
 #>
