@@ -157,6 +157,9 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 
 ## Original [Autoruns.exe](https://technet.microsoft.com/en-us/sysinternals/bb963902.aspx) from Mark Russinovich
 
+[Autoruns v13.81](https://blogs.technet.microsoft.com/sysinternals/2017/12/12/autoruns-v13-81-bginfo-v423-handle-v4-11/)
+> This update to Autoruns fixes a Wow64 bug in Autorunsc that could cause 32-bit paths to result in 'file not found' errors, and expands the set of images not considered part of Windows for the Windows filter in order to reveal malicious files masquerading as Windows images
+
 [Autoruns v13.80](https://blogs.technet.microsoft.com/sysinternals/2017/09/12/sysinternals-update-sysmon-v6-1-process-monitor-v3-4-autoruns-v13-8-accesschk-v6-11/)
 > This release of Autoruns, a utility for viewing and managing autostart execution points (ASEPs), adds additional autostart entry points, has asynchronous file saving, fixes a bug parsing 32-bit paths on 64-bit Windows, shows the display name for drivers and services, and fixes a bug in offline Virus Total scanning.
 
