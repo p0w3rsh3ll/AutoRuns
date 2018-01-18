@@ -1571,13 +1571,12 @@ Begin {
                 }
                 #>
                 # Permanent events
-                # Get-WMIObject -Namespace root\Subscription -Class __EventConsumer -ErrorAction SilentlyContinue| 
-                Get-CimInstance -Namespace root\Subscription -Class __EventConsumer -ErrorAction SilentlyContinue |
-                Where-Object { $_.__CLASS -eq 'ActiveScriptEventConsumer' } | 
+                Get-CimInstance -Namespace root\Subscription -ClassName __EventConsumer -ErrorAction SilentlyContinue -Verbose:$false | 
+                Where-Object { $_.PSBase.CimClass.CimClassName -eq 'ActiveScriptEventConsumer' } | 
                 ForEach-Object {
                     if ($_.ScriptFileName) {
                         [pscustomobject]@{
-                            Path = $_.__PATH ;
+                            Path = "\\.\$($_.PSBase.CimSystemProperties.Namespace -replace '/','\'):ActiveScriptEventConsumer.Name='$($_.Name)'" ;
                             Item = $_.Name
                             Value =  $_.ScriptFileName ;
                             Category = 'WMI' ;
@@ -1585,7 +1584,7 @@ Begin {
                     
                     } elseif ($_.ScriptText) {
                         [pscustomobject]@{
-                            Path = $_.__PATH ;
+                            Path = "\\.\$($_.PSBase.CimSystemProperties.Namespace -replace '/','\'):ActiveScriptEventConsumer.Name='$($_.Name)'" ;
                             Item = $_.Name
                             Value =  $null ;
                             Category = 'WMI' ;
@@ -1593,25 +1592,52 @@ Begin {
                     } 
                 }
 
-                Get-WMIObject -Namespace root\Subscription -Class __EventConsumer -ErrorAction SilentlyContinue| 
-                Where-Object { $_.__CLASS -eq 'CommandlineEventConsumer' } | 
+                Get-CimInstance -Namespace root\Subscription -ClassName __EventConsumer -ErrorAction SilentlyContinue -Verbose:$false | 
+                Where-Object { $_.PSBase.CimClass.CimClassName -eq 'CommandLineEventConsumer' } | 
                 ForEach-Object {
-                        [pscustomobject]@{
-                            Path = $_.__PATH ;
-                            Item = $_.Name
-                            Value =  "$($_.WorkingDirectory)$($_.ExecutablePath)" ;# $($_.CommandLineTemplate)" ;
-                            Category = 'WMI' ;
-                        }
+                    [pscustomobject]@{
+                        Path = "\\.\$($_.PSBase.CimSystemProperties.Namespace -replace '/','\'):CommandLineEventConsumer.Name='$($_.Name)'" ;
+                        Item = $_.Name
+                        Value =  "$($_.WorkingDirectory)$($_.ExecutablePath)" ;# $($_.CommandLineTemplate)" ;
+                        Category = 'WMI' ;
+                    }
                 }
+
                 # List recursiveley registered and resolved WMI providers
-                Get-WmiObject -Namespace root -Recurse -Class __Provider -List -ErrorAction SilentlyContinue | 
+                Function Get-WmiNamespace {
+                Param (
+                    [string]$Namespace='root'
+                )
+                    try {
+                        Get-CimInstance -Namespace $Namespace -ClassName __Namespace -ErrorAction Stop -Verbose:$false |
+                        ForEach-Object {
+                            ($ns = '{0}/{1}' -f $_.PSBase.CimSystemProperties.Namespace,$_.Name)
+                            Get-WmiNamespace -Namespace $ns
+                        }
+                    } catch {
+                        Write-Warning -Message "Failed to enumerate NS: $ns because $($_.Exception.Message)"
+                    }
+                }
+
+                Function Get-WmiProvider {
+                Param (
+                    [string]$Namespace='root'
+                )
+                    try {
+                        Get-CimInstance -Namespace $Namespace -ClassName __Provider -ErrorAction Stop -Verbose:$false
+                    } catch {
+                        Write-Warning -Message "Failed to enumerate NS: $ns because $($_.Exception.Message)"
+                    }
+                }
+
+                Get-WmiNamespace | 
                 ForEach-Object {
-                    Get-WmiObject -Namespace $_.__NAMESPACE -Class $_.__CLASS -ErrorAction SilentlyContinue | 
+                    Get-WmiProvider -Namespace $_ | 
                     ForEach-Object {
-                        Write-Verbose -Message "Found provider clsid $($_.CLSID) from under the $($_.__NAMESPACE) namespace"
+                        Write-Verbose -Message "Found provider clsid $($_.CLSID) from under the $($_.PSBase.CimSystemProperties.Namespace) namespace"
                         if (($clsid = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Classes\CLSID\$($_.CLSID)\InprocServer32" -Name '(default)' -ErrorAction SilentlyContinue).'(default)')) {
                             [pscustomobject]@{
-                                Path = $_.__PATH ;
+                                Path = "\\.\$($_.PSBase.CimSystemProperties.Namespace -replace '/','\'):__Win32Provider.Name='$($_.Name)'"
                                 Item = $_.Name
                                 Value = $clsid
                                 Category = 'WMI' ;
@@ -2114,7 +2140,7 @@ Begin {
                     }
                     WMI {
                         if ($Item.Value) {
-                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $($Item.Value) -Force -PassThru
+                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $($Item.Value -replace '"','') -Force -PassThru
                             
                         } else {
                             $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $null -Force -PassThru
