@@ -1683,6 +1683,14 @@ Begin {
                                     )
                                     break
                                 }
+                                # localappdata variable
+                                '^%localappdata%' {
+                                    Join-Path -Path "$($env:localappdata)" -ChildPath (
+                                        @([regex]'^%localappdata%\\(?<File>.*)').Matches($_) | 
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )
+                                    break
+                                }
                                 # special W7 case with media center
                                 '^%SystemRoot%\\ehome\\.*\s' {
                                     # "$($env:systemroot)\ehome\ehrec.exe"
