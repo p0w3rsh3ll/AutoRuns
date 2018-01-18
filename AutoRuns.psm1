@@ -1856,11 +1856,11 @@ Begin {
                     Explorer {
                         $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
                             if ($Item.Value) {
-                                if ($Item.Value -match '^[A-Z]:\\') {
+                                if ($Item.Value -match '^"?[A-Z]:\\') {
                                     if ($Item.Path -match 'Wow6432Node') {
                                         $Item.Value -replace 'system32','syswow64' | Get-NormalizedFileSystemPath
                                     } else {
-                                        $Item.Value | Get-NormalizedFileSystemPath
+                                        $Item.Value -replace '"','' | Get-NormalizedFileSystemPath
                                     }
                                 } else {
                                     if ($Item.Path -match 'Wow6432Node') {
