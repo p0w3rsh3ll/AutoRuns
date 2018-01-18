@@ -1413,12 +1413,14 @@ Begin {
 
                 # HKLM\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig\Security Packages
                 if (Test-Path -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig' -PathType Container) {
-                    (Get-RegValue -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig' -Name 'Security Packages'  @Category).Value | ForEach-Object {
-                        [pscustomobject]@{
-                            Path = 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig'
-                            Item = 'Security Packages'
-                            Value = $_
-                            Category = 'LSA Providers'
+                    (Get-RegValue -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig' -Name 'Security Packages' @Category).Value | ForEach-Object {
+                        if ($null -ne $_) {
+                            [pscustomobject]@{
+                                Path = 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig'
+                                Item = 'Security Packages'
+                                Value = $_
+                                Category = 'LSA Providers'
+                            }
                         }
                     }
                 }
