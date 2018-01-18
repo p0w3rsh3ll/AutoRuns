@@ -108,6 +108,7 @@ Begin {
 
     #region Helperfunctions
 
+    if ($PSVersionTable.PSEdition -ne 'Core') {
     # Courtesy of Microsoft
     # Extracted from PS 4.0 with (dir function:\Get-FileHash).Definition
     Function Get-FileHash {
@@ -174,7 +175,7 @@ Begin {
             }
         }
     }
-
+    }
     Function Get-RegValue {
     [CmdletBinding()]
     Param(
@@ -1568,7 +1569,10 @@ Begin {
                 }
                 #>
                 # Permanent events
-                Get-WMIObject -Namespace root\Subscription -Class __EventConsumer -ErrorAction SilentlyContinue| Where-Object { $_.__CLASS -eq 'ActiveScriptEventConsumer' } | ForEach-Object {
+                # Get-WMIObject -Namespace root\Subscription -Class __EventConsumer -ErrorAction SilentlyContinue| 
+                Get-CimInstance -Namespace root\Subscription -Class __EventConsumer -ErrorAction SilentlyContinue |
+                Where-Object { $_.__CLASS -eq 'ActiveScriptEventConsumer' } | 
+                ForEach-Object {
                     if ($_.ScriptFileName) {
                         [pscustomobject]@{
                             Path = $_.__PATH ;
@@ -1587,7 +1591,9 @@ Begin {
                     } 
                 }
 
-                Get-WMIObject -Namespace root\Subscription -Class __EventConsumer -ErrorAction SilentlyContinue| Where-Object { $_.__CLASS -eq 'CommandlineEventConsumer' } | ForEach-Object {
+                Get-WMIObject -Namespace root\Subscription -Class __EventConsumer -ErrorAction SilentlyContinue| 
+                Where-Object { $_.__CLASS -eq 'CommandlineEventConsumer' } | 
+                ForEach-Object {
                         [pscustomobject]@{
                             Path = $_.__PATH ;
                             Item = $_.Name
@@ -1596,8 +1602,10 @@ Begin {
                         }
                 }
                 # List recursiveley registered and resolved WMI providers
-                Get-WmiObject -Namespace root -Recurse -Class __Provider -List -ErrorAction SilentlyContinue | ForEach-Object {
-                    Get-WmiObject -Namespace $_.__NAMESPACE -Class $_.__CLASS -ErrorAction SilentlyContinue | ForEach-Object {
+                Get-WmiObject -Namespace root -Recurse -Class __Provider -List -ErrorAction SilentlyContinue | 
+                ForEach-Object {
+                    Get-WmiObject -Namespace $_.__NAMESPACE -Class $_.__CLASS -ErrorAction SilentlyContinue | 
+                    ForEach-Object {
                         Write-Verbose -Message "Found provider clsid $($_.CLSID) from under the $($_.__NAMESPACE) namespace"
                         if (($clsid = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Classes\CLSID\$($_.CLSID)\InprocServer32" -Name '(default)' -ErrorAction SilentlyContinue).'(default)')) {
                             [pscustomobject]@{
@@ -1652,9 +1660,9 @@ Begin {
                                     break
                                 }
                                 # Rundll32
-                                '^((%windir%|%(s|S)ystem(r|R)oot%)\\system32\\)?rundll32\.exe\s(/[a-z]\s)?.*,.*' {
+                                '^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?rundll32\.exe\s(/[a-z]\s)?.*,.*' {
                                     Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
-                                        @([regex]'^((%windir%|%(s|S)ystem(r|R)oot%)\\system32\\)?rundll32\.exe\s(/[a-z]\s)?(%windir%\\system32\\)?(?<File>.*),').Matches($_) | 
+                                        @([regex]'^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?rundll32\.exe\s(/[a-z]\s)?(%windir%\\(s|S)ystem32\\)?(?<File>.*),').Matches($_) | 
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
