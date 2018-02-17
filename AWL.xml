@@ -1,0 +1,11 @@
+<AppLockerPolicy Version="1">
+  <RuleCollection Type="Script">
+    <FilePublisherRule Id="ee09ac4c-c36a-4cee-888b-346cc31c3964" Name="Signed by O=EMIN ATAC, L=SOUFFELWEYERSHEIM, C=FR" Description="" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions>
+        <FilePublisherCondition PublisherName="O=EMIN ATAC, L=SOUFFELWEYERSHEIM, C=FR" ProductName="*" BinaryName="*">
+          <BinaryVersionRange LowSection="*" HighSection="*" />
+        </FilePublisherCondition>
+      </Conditions>
+    </FilePublisherRule>
+  </RuleCollection>
+</AppLockerPolicy>
