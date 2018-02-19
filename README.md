@@ -28,7 +28,7 @@ Find-Module -Name Autoruns -Repository PSGallery
 ```
 Version    Name                                Repository           Description
 -------    ----                                ----------           -----------                                   
-13.81      AutoRuns                            PSGallery            AutoRuns is a module ...
+13.82      AutoRuns                            PSGallery            AutoRuns is a module ...
 ```
 
 ```powershell
@@ -41,8 +41,8 @@ Stop and please review the content of the module, I mean the code to make sure i
 You can also verify that the SHA256 hashes of downloaded files match those stored in the catalog file
 ```powershell
 $HT = @{
-    CatalogFilePath = "~/Downloads/AutoRuns/13.81/AutoRuns.cat"
-    Path = "~/Downloads/AutoRuns/13.81"
+    CatalogFilePath = "~/Downloads/AutoRuns/13.82/AutoRuns.cat"
+    Path = "~/Downloads/AutoRuns/13.82"
     Detailed = $true
     FilesToSkip = 'PSGetModuleInfo.xml'
 }
@@ -51,7 +51,7 @@ Test-FileCatalog @HT
 
 ```powershell
 # Import the module
-Import-Module ~/Downloads/AutoRuns/13.81/AutoRuns.psd1 -Force -Verbose
+Import-Module ~/Downloads/AutoRuns/13.82/AutoRuns.psd1 -Force -Verbose
 ```
 
 <a name="Functions"/>
@@ -63,7 +63,7 @@ Get-Command -Module AutoRuns
 ```
 CommandType     Name                                               Version    Source
 -----------     ----                                               -------    ------
-Function        Get-PSAutorun                                      13.81      AutoRuns
+Function        Get-PSAutorun                                      13.82      AutoRuns
 ```
 
 
@@ -169,6 +169,9 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 <a name="AutorunsHistory"/>
 
 ## Original [Autoruns.exe](https://technet.microsoft.com/en-us/sysinternals/bb963902.aspx) from Mark Russinovich
+
+[Autoruns v13.82](https://blogs.technet.microsoft.com/sysinternals/2018/02/17/process-monitor-v3-50-autoruns-v13-82-du-v1-61-sdelete-v2-01/)
+>This Autoruns release shows Onenote addins and fixes several bugs.
 
 [Autoruns v13.81](https://blogs.technet.microsoft.com/sysinternals/2017/12/12/autoruns-v13-81-bginfo-v423-handle-v4-11/)
 > This update to Autoruns fixes a Wow64 bug in Autorunsc that could cause 32-bit paths to result in 'file not found' errors, and expands the set of images not considered part of Windows for the Windows filter in order to reveal malicious files masquerading as Windows images

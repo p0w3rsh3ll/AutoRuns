@@ -495,7 +495,6 @@ Begin {
                     }
 	            }
 
-	            Get-RegValue -Path 'HKLM:\System\CurrentControlSet\Control' -Name 'ServiceControlManagerExtension' @Category
                 #endregion Boot Execute
             }
             if ($All -or $AppinitDLLs) {
@@ -974,7 +973,7 @@ Begin {
                 $Category = @{ Category = 'Logon'}
 
                 # Winlogon
-                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name 'VmApplet','Userinit','Shell','TaskMan','AppSetup' @Category
+                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name 'VmApplet','Userinit','Shell','TaskMan' @Category
 
                 # UserInitMprLogonScript
                 if (Test-Path -Path 'HKLM:\Environment' -PathType Container) {
@@ -1031,10 +1030,9 @@ Begin {
                 Get-RegValue -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\AlternateShells' -Name 'AvailableShells' @Category
 
                 # Terminal server
+                # Removed from 13.82 but key/value still exist
                 Get-RegValue -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\Wds\rdpwd' -Name 'StartupPrograms' @Category
-                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Runonce' -Name '*' @Category
-                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx' -Name '*' @Category
-                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run' -Name '*' @Category
+                # Removed from 13.82 but key/value still exist
                 Get-RegValue -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp'  -Name 'InitialProgram' @Category
 
                 # Run
@@ -1174,10 +1172,6 @@ Begin {
                 $null,'Wow6432Node' | ForEach-Object {
                     Get-RegValue -Path "HKCU:\Software\$($_)\Microsoft\Windows\CurrentVersion\RunOnceEx" -Name '*' @Category 
                 }
-
-                Get-RegValue -Path 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Runonce' -Name '*' @Category
-                Get-RegValue -Path 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx' -Name '*' @Category
-                Get-RegValue -Path 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run' -Name '*' @Category
 
                 #endregion User Logon
 
@@ -2355,4 +2349,17 @@ Get-PSAutorun -WMI -VerifyDigitalSignature | Where { -not $_.isOSBinary }
 # From 13.71 to 13.80
     +HKCU\Environment\UserInitMprLogonScript
     +HKLM\Environment\UserInitMprLogonScript
+# From 13.80 to 13.82
+    +HKLM\Software\Microsoft\Office\Onenote\Addins
+    +HKCU\Software\Microsoft\Office\Onenote\Addins
+    +HKLM\Software\Wow6432Node\Microsoft\Office\Onenote\Addins
+    +HKCU\Software\Wow6432Node\Microsoft\Office\Onenote\Addins
+    -HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\AppSetup
+    -HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Runonce
+    -HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx
+    -HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run
+    -HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Runonce
+    -HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx
+    -HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run
+    -HKLM\System\CurrentControlSet\Control\ServiceControlManagerExtension
 #>
