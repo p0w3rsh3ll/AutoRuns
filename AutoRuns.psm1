@@ -1852,9 +1852,9 @@ Begin {
                                 '^System32\\CLFS\.sys' {
                                     $_ -replace 'System32\\',"$($env:systemroot)\system32\"
                                 }
-                                '^"?[A-Za-z]\\[Pp]rogram\s[fF]iles.*\\(?<FilePath>.*\\\.exe)\s?' {
+                                '^("|\\\?\?\\)?[A-Za-z]\\[Pp]rogram\s[fF]iles.*\\(?<FilePath>.*\\\.exe)\s?' {
                                     Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
-                                        @([regex]'^"?[A-Za-z]\\[Pp]rogram\s[fF]iles.*\\(?<FilePath>.*\\\.exe)\s?').Matches($_) | 
+                                        @([regex]'^("|\\\?\?\\)?[A-Za-z]\\[Pp]rogram\s[fF]iles.*\\(?<FilePath>.*\\\.exe)\s?').Matches($_) | 
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )                                        
                                     break
