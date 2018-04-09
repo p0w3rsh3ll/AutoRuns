@@ -1863,6 +1863,10 @@ Begin {
                                     $_ -replace '\\\?\?\\',''
                                     break;
                                 }
+                                '^"?C:\\ProgramData' {
+                                    $_ -replace '"',''
+                                    break;
+                                }
                                 'SysmonDrv.sys' {
                                     $env:PATH -split ';'| ForEach-Object { 
                                         Get-ChildItem -Path $_\*.sys -Include SysmonDrv.sys -Force -EA 0 
