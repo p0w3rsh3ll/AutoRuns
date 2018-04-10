@@ -1927,9 +1927,12 @@ Begin {
                                 Join-Path -Path "$($env:SystemRoot)\System32" -ChildPath $Item.Value
                             ) -Force -PassThru
                             if ([environment]::Is64BitOperatingSystem) {
-                                $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
-                                    Join-Path -Path "$($env:SystemRoot)\Syswow64" -ChildPath $Item.Value
-                                ) -Force -PassThru
+                                # Duplicate if target file exists
+                                if (Test-Path -Path (Join-Path -Path "$($env:SystemRoot)\Syswow64" -ChildPath $Item.Value) -PathType Leaf) {
+                                    $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
+                                        Join-Path -Path "$($env:SystemRoot)\Syswow64" -ChildPath $Item.Value
+                                    ) -Force -PassThru
+                                }
                             }
                         }
                         break
