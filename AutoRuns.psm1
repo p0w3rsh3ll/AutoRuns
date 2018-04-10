@@ -1908,7 +1908,23 @@ Begin {
                         break
                     }
                     'Image Hijacks' {
-                        $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $null -Force -PassThru
+
+                        if ($Item.Value -eq '"%1" %*') {
+                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $null -Force -PassThru
+                        } else {
+                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(    
+                                Switch -Regex ($Item.Value) {
+                                '^"?(?<FileName>.*\.[A-Z]{3})"?\s?%?' {
+                                    @([regex]'^"?(?<FileName>.*\.[A-Z]{3})"?\s?%?').Matches($_) | 
+                                    Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    break
+                                }
+                                default {
+                                    $_
+                                }
+                            }) -Force -PassThru
+
+                        }
                         break
                     }
                     'Internet Explorer' {
