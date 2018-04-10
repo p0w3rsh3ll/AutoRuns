@@ -1722,6 +1722,14 @@ Begin {
                                     ).exe"
                                     break
                                 }
+                                # ProgramData
+                                '^"?C:\\ProgramData\\' {
+                                    Join-Path -Path "$($env:ProgramData)" -ChildPath (
+                                        @([regex]'^"?C:\\ProgramData\\(?<File>.*\.exe)("|\s)?').Matches($_) | 
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )                                        
+                                    break
+                                }
                                 # ProgramFiles
                                 '^"?(C:\\Program\sFiles|%ProgramFiles%)\\' {
                                     Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
