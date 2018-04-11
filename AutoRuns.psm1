@@ -1722,6 +1722,15 @@ Begin {
                                     ).exe"
                                     break
                                 }
+                                # special case Office 2016 License Heartbeat
+                                '%ProgramFiles%\\Common\sFiles\\Microsoft\sShared\\Office16\\OLicenseHeartbeat\.exe' {
+                                    if ([environment]::Is64BitOperatingSystem) {
+                                        'C:\Program Files (x86)\Common Files\microsoft shared\OFFICE16\OLicenseHeartbeat.exe'
+                                    } else {
+                                        'C:\Program Files\Common Files\microsoft shared\OFFICE16\OLicenseHeartbeat.exe'
+                                    }
+                                    break
+                                }
                                 # ProgramData
                                 '^"?C:\\ProgramData\\' {
                                     Join-Path -Path "$($env:ProgramData)" -ChildPath (
