@@ -2158,9 +2158,9 @@ Begin {
                                 )  
                                 break
                             }
-                            '^"?[A-Za-z]:\\[Pp]rogram\s[dD]ata\\(?<FileName>.*\.[eE][xX][eE])\s?' {
+                            '^"?[A-Za-z]:\\[Pp]rogram[dD]ata\\(?<FileName>.*\.[eE][xX][eE])\s?' {
                                 Join-Path -Path "$($env:ProgramData)" -ChildPath (
-                                    @([regex]'^"?[A-Za-z]:\\[Pp]rogram\s[dD]ata\\(?<FileName>.*\.[eE][xX][eE])\s?').Matches($_) | 
+                                    @([regex]'^"?[A-Za-z]:\\[Pp]rogram[dD]ata\\(?<FileName>.*\.[eE][xX][eE])\s?').Matches($_) | 
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                 )  
                                 break
