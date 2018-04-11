@@ -1332,7 +1332,8 @@ Begin {
                                                         if ((Get-ItemProperty -Path "HKLM:\SOFTWARE\$arc\Classes\CLSID\$clsid\InprocServer32"  -Name '(default)' -ErrorAction SilentlyContinue).'(default)') {
                                                             (Get-ItemProperty -Path "HKLM:\SOFTWARE\$arc\Classes\CLSID\$clsid\InprocServer32"  -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
                                                         } else {
-                                                            $clsid
+                                                            # $clsid
+                                                            (Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Classes\CLSID\$clsid\InprocServer32"  -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
                                                         }
                                                         # (Get-ItemProperty -Path "HKLM:\SOFTWARE\Classes\CLSID\$clsid\InprocServer32"  -Name '(default)' -ErrorAction SilentlyContinue).'(default)';
                                                 ) # | Where-Object { $null -ne $_ } | Sort-Object -Unique # | Select-Object -First 1
