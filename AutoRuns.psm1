@@ -1983,7 +1983,7 @@ Begin {
                                 switch -Regex ($Item.Value) {
                                     '\\Rundll32\.exe\s' {
                                         (($_ -split '\s')[1] -split ',')[0]
-                                        break;
+                                        break
                                     }
                                     '\\Rundll32\.exe"' {
                                         (($_ -split '\s',2)[1] -split ',')[0] -replace '"',''
@@ -1991,11 +1991,15 @@ Begin {
                                     }
                                     '^"[A-Z]:\\Program' {
                                         ($_ -split '"')[1]
-                                        break;
+                                        break
                                     }
                                     '^"[A-Z]:\\Windows' {
                                         ($_ -split '"')[1]
-                                        break;
+                                        break
+                                    }
+                                    'C:\\WINDOWS\\inf\\unregmp2\.exe\s/ShowWMP' {
+                                        'C:\WINDOWS\system32\unregmp2.exe'
+                                        break
                                     }
                                     'rdpclip' {
                                         "$($env:SystemRoot)\system32\$($_).exe"
@@ -2048,7 +2052,7 @@ Begin {
                                     }
                                     '^RunDLL32\s' {
                                         Join-Path -Path "$($env:SystemRoot)\system32" -ChildPath (($_ -split '\s')[1] -split ',')[0]
-                                        break;
+                                        break
                                     }
 
                                     # ProgramFiles
@@ -2070,7 +2074,7 @@ Begin {
                                     # C:\Users
                                     '^"[A-Za-z]:\\' {
                                         ($_ -split '"')[1]
-                                            break;
+                                            break
                                     }
                                     default {
                                         Write-Verbose -Message "default: $_"
