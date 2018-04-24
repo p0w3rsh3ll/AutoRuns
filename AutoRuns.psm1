@@ -1332,7 +1332,8 @@ Begin {
                                                         if ((Get-ItemProperty -Path "HKLM:\SOFTWARE\$arc\Classes\CLSID\$clsid\InprocServer32"  -Name '(default)' -ErrorAction SilentlyContinue).'(default)') {
                                                             (Get-ItemProperty -Path "HKLM:\SOFTWARE\$arc\Classes\CLSID\$clsid\InprocServer32"  -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
                                                         } else {
-                                                            $clsid
+                                                            # $clsid
+                                                            (Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Classes\CLSID\$clsid\InprocServer32"  -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
                                                         }
                                                         # (Get-ItemProperty -Path "HKLM:\SOFTWARE\Classes\CLSID\$clsid\InprocServer32"  -Name '(default)' -ErrorAction SilentlyContinue).'(default)';
                                                 ) # | Where-Object { $null -ne $_ } | Sort-Object -Unique # | Select-Object -First 1
@@ -1722,6 +1723,23 @@ Begin {
                                     ).exe"
                                     break
                                 }
+                                # special case Office 2016 License Heartbeat
+                                '%ProgramFiles%\\Common\sFiles\\Microsoft\sShared\\Office16\\OLicenseHeartbeat\.exe' {
+                                    if ([environment]::Is64BitOperatingSystem) {
+                                        'C:\Program Files (x86)\Common Files\microsoft shared\OFFICE16\OLicenseHeartbeat.exe'
+                                    } else {
+                                        'C:\Program Files\Common Files\microsoft shared\OFFICE16\OLicenseHeartbeat.exe'
+                                    }
+                                    break
+                                }
+                                # ProgramData
+                                '^"?C:\\ProgramData\\' {
+                                    Join-Path -Path "$($env:ProgramData)" -ChildPath (
+                                        @([regex]'^"?C:\\ProgramData\\(?<File>.*\.exe)("|\s)?').Matches($_) | 
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )                                        
+                                    break
+                                }
                                 # ProgramFiles
                                 '^"?(C:\\Program\sFiles|%ProgramFiles%)\\' {
                                     Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
@@ -1774,7 +1792,9 @@ Begin {
                             $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $null -Force -PassThru
                         } else {
                             # Switch ? malware example
-                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value "$($Item.Value)" -Force -PassThru
+                            $Item.Value -split '\s|,' | ForEach-Object {
+                                $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value "$($_)" -Force -PassThru
+                            }
                         }
                         break
                     }
@@ -1850,15 +1870,19 @@ Begin {
                                 '^System32\\CLFS\.sys' {
                                     $_ -replace 'System32\\',"$($env:systemroot)\system32\"
                                 }
-                                '^"?[A-Za-z]\\[Pp]rogram\s[fF]iles.*\\(?<FilePath>.*\\\.exe)\s?' {
+                                '^("|\\\?\?\\)?[A-Za-z]:\\[Pp]rogram\s[fF]iles\\(?<FilePath>.*\.[A-Za-z]{3})\s?' {
                                     Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
-                                        @([regex]'^"?[A-Za-z]\\[Pp]rogram\s[fF]iles.*\\(?<FilePath>.*\\\.exe)\s?').Matches($_) | 
+                                        @([regex]'^("|\\\?\?\\)?[A-Za-z]:\\[Pp]rogram\s[fF]iles\\(?<FilePath>.*\.[A-Za-z]{3})\s?').Matches($_) | 
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )                                        
                                     break
                                 }
                                 '^(\\\?\?\\)?C:\\ProgramData' {
                                     $_ -replace '\\\?\?\\',''
+                                    break;
+                                }
+                                '^"?C:\\ProgramData' {
+                                    $_ -replace '"',''
                                     break;
                                 }
                                 'SysmonDrv.sys' {
@@ -1894,7 +1918,23 @@ Begin {
                         break
                     }
                     'Image Hijacks' {
-                        $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $null -Force -PassThru
+
+                        if ($Item.Value -eq '"%1" %*') {
+                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $null -Force -PassThru
+                        } else {
+                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(    
+                                Switch -Regex ($Item.Value) {
+                                '^"?(?<FileName>.*\.[A-Z]{3})"?\s?%?' {
+                                    @([regex]'^"?(?<FileName>.*\.[A-Z]{3})"?\s?%?').Matches($_) | 
+                                    Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    break
+                                }
+                                default {
+                                    $_
+                                }
+                            }) -Force -PassThru
+
+                        }
                         break
                     }
                     'Internet Explorer' {
@@ -1913,114 +1953,147 @@ Begin {
                                 Join-Path -Path "$($env:SystemRoot)\System32" -ChildPath $Item.Value
                             ) -Force -PassThru
                             if ([environment]::Is64BitOperatingSystem) {
-                                $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
-                                    Join-Path -Path "$($env:SystemRoot)\Syswow64" -ChildPath $Item.Value
-                                ) -Force -PassThru
+                                # Duplicate if target file exists
+                                if (Test-Path -Path (Join-Path -Path "$($env:SystemRoot)\Syswow64" -ChildPath $Item.Value) -PathType Leaf) {
+                                    $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
+                                        Join-Path -Path "$($env:SystemRoot)\Syswow64" -ChildPath $Item.Value
+                                    ) -Force -PassThru
+                                }
                             }
                         }
                         break
                     }
                     Logon {
-                        $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
-                            switch -Regex ($Item.Value) {
-                                '\\Rundll32\.exe\s' {
-                                    (($_ -split '\s')[1] -split ',')[0]
-                                    break;
+                        If ($Item.Item -eq 'UserInit') {
+                            $Item.Value -split ',' | 
+                            ForEach-Object {
+                                $s = $_
+                                if ($_ -ne [string]::Empty) {
+                                    $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
+                                        
+                                        if ($s -match '^"?[A-Z]:\\') {
+                                            if ($Item.Path -match 'Wow6432Node') {
+                                                $s -replace 'system32','syswow64' | Get-NormalizedFileSystemPath
+                                            } else {
+                                                $s -replace '"','' | Get-NormalizedFileSystemPath
+                                            }
+                                        } else {
+                                            if ($Item.Path -match 'Wow6432Node') {
+                                                Join-Path -Path "$($env:systemroot)\syswow64" -ChildPath $s
+                                            } else {
+                                                Join-Path -Path "$($env:systemroot)\system32" -ChildPath $s
+                                            }
+                                        }
+                                        
+                                    ) -Force -PassThru
                                 }
-                                '\\Rundll32\.exe"' {
-                                    (($_ -split '\s',2)[1] -split ',')[0] -replace '"',''
-                                    break;
-                                }
-                                '^"[A-Z]:\\Program' {
-                                    ($_ -split '"')[1]
-                                    break;
-                                }
-                                '^"[A-Z]:\\Windows' {
-                                    ($_ -split '"')[1]
-                                    break;
-                                }
-                                'rdpclip' {
-                                    "$($env:SystemRoot)\system32\$($_).exe"
-                                    break
-                                }
-                                '^Explorer\.exe$' {
-                                    "$($env:SystemRoot)\$($_)"
-                                    break
-                                }
-                                # regsvr32.exe /s /n /i:U shell32.dll
-                                '^regsvr32\.exe\s/s\s/n\s/i:U\sshell32\.dll' {
-                                    if ($Item.Path -match 'Wow6432Node') {
-                                        "$($env:SystemRoot)\syswow64\shell32.dll"
-                                    }else {
-                                        "$($env:SystemRoot)\system32\shell32.dll"
+                            }
+                        } else {
+                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
+                                switch -Regex ($Item.Value) {
+                                    '\\Rundll32\.exe\s' {
+                                        (($_ -split '\s')[1] -split ',')[0]
+                                        break
                                     }
-                                    break
-                                }
-                                '^C:\\Windows\\system32\\regsvr32\.exe\s/s\s/n\s/i:/UserInstall\sC:\\Windows\\system32\\themeui\.dll' {
-                                    if ($Item.Path -match 'Wow6432Node') {
-                                        "$($env:SystemRoot)\syswow64\themeui.dll"
-                                    }else {
-                                        "$($env:SystemRoot)\system32\themeui.dll"
-                                    }
-                                    break
-                                }
-                                '^C:\\Windows\\system32\\cmd\.exe\s/D\s/C\sstart\sC:\\Windows\\system32\\ie4uinit\.exe\s\-ClearIconCache' {
-                                    if ($Item.Path -match 'Wow6432Node') {
-                                        "$($env:SystemRoot)\syswow64\ie4uinit.exe"
-                                    }else {
-                                        "$($env:SystemRoot)\system32\ie4uinit.exe"
-                                    }
-                                    break
-                                }
-                                '^[A-Z]:\\Windows\\' {
-                                    if ($Item.Path -match 'Wow6432Node') {
-                                        (($_ -split '\s')[0] -replace ',','') -replace 'System32','Syswow64'
-                                    } else {
-                                        (($_ -split '\s')[0] -replace ',','')
-                                    }
-                                    break
-                                }
-                                '^[a-zA-Z0-9]+\.(exe|dll)' {
-                                    if ($Item.Path -match 'Wow6432Node') {
-                                        Join-Path -Path "$($env:SystemRoot)\syswow64" -ChildPath ($_ -split '\s')[0]
-                                    } else {
-                                        Join-Path -Path "$($env:SystemRoot)\system32" -ChildPath ($_ -split '\s')[0]
-                                    }
-                                    break
-                                }
-                                '^RunDLL32\s' {
-                                    Join-Path -Path "$($env:SystemRoot)\system32" -ChildPath (($_ -split '\s')[1] -split ',')[0]
-                                    break;
-                                }
-
-                                # ProgramFiles
-                                '^[A-Za-z]:\\Program\sFiles\\' {
-                                    Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
-                                        @([regex]'[A-Za-z]:\\Program\sFiles\\(?<File>.*\.exe)\s?').Matches($_) | 
-                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
-                                    )                                        
-                                    break
-                                }
-                                # ProgramFilesx86
-                                '^[A-Za-z]:\\Program\sFiles\s\(x86\)\\' {
-                                    Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
-                                        @([regex]'[A-Za-z]:\\Program\sFiles\s\(x86\)\\(?<File>.*\.exe)\s?').Matches($_) | 
-                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
-                                    )
-                                    break
-                                }
-                                # C:\Users
-                                '^"[A-Za-z]:\\' {
-                                    ($_ -split '"')[1]
+                                    '\\Rundll32\.exe"' {
+                                        (($_ -split '\s',2)[1] -split ',')[0] -replace '"',''
                                         break;
-                                }
-                                default {
-                                    Write-Verbose -Message "default: $_"
-                                    [string]::Empty
-                                    # $_
-                                }
-                            } 
-                        ) -Force -PassThru
+                                    }
+                                    '^"[A-Z]:\\Program' {
+                                        ($_ -split '"')[1]
+                                        break
+                                    }
+                                    '^"[A-Z]:\\Windows' {
+                                        ($_ -split '"')[1]
+                                        break
+                                    }
+                                    'C:\\WINDOWS\\inf\\unregmp2\.exe\s/ShowWMP' {
+                                        'C:\WINDOWS\system32\unregmp2.exe'
+                                        break
+                                    }
+                                    'rdpclip' {
+                                        "$($env:SystemRoot)\system32\$($_).exe"
+                                        break
+                                    }
+                                    '^Explorer\.exe$' {
+                                        "$($env:SystemRoot)\$($_)"
+                                        break
+                                    }
+                                    # regsvr32.exe /s /n /i:U shell32.dll
+                                    '^regsvr32\.exe\s/s\s/n\s/i:U\sshell32\.dll' {
+                                        if ($Item.Path -match 'Wow6432Node') {
+                                            "$($env:SystemRoot)\syswow64\shell32.dll"
+                                        }else {
+                                            "$($env:SystemRoot)\system32\shell32.dll"
+                                        }
+                                        break
+                                    }
+                                    '^C:\\Windows\\system32\\regsvr32\.exe\s/s\s/n\s/i:/UserInstall\sC:\\Windows\\system32\\themeui\.dll' {
+                                        if ($Item.Path -match 'Wow6432Node') {
+                                            "$($env:SystemRoot)\syswow64\themeui.dll"
+                                        }else {
+                                            "$($env:SystemRoot)\system32\themeui.dll"
+                                        }
+                                        break
+                                    }
+                                    '^C:\\Windows\\system32\\cmd\.exe\s/D\s/C\sstart\sC:\\Windows\\system32\\ie4uinit\.exe\s\-ClearIconCache' {
+                                        if ($Item.Path -match 'Wow6432Node') {
+                                            "$($env:SystemRoot)\syswow64\ie4uinit.exe"
+                                        }else {
+                                            "$($env:SystemRoot)\system32\ie4uinit.exe"
+                                        }
+                                        break
+                                    }
+                                    '^[A-Z]:\\Windows\\' {
+                                        if ($Item.Path -match 'Wow6432Node') {
+                                            (($_ -split '\s')[0] -replace ',','') -replace 'System32','Syswow64'
+                                        } else {
+                                            (($_ -split '\s')[0] -replace ',','')
+                                        }
+                                        break
+                                    }
+                                    '^[a-zA-Z0-9]+\.(exe|dll)' {
+                                        if ($Item.Path -match 'Wow6432Node') {
+                                            Join-Path -Path "$($env:SystemRoot)\syswow64" -ChildPath ($_ -split '\s')[0]
+                                        } else {
+                                            Join-Path -Path "$($env:SystemRoot)\system32" -ChildPath ($_ -split '\s')[0]
+                                        }
+                                        break
+                                    }
+                                    '^RunDLL32\s' {
+                                        Join-Path -Path "$($env:SystemRoot)\system32" -ChildPath (($_ -split '\s')[1] -split ',')[0]
+                                        break
+                                    }
+
+                                    # ProgramFiles
+                                    '^[A-Za-z]:\\Program\sFiles\\' {
+                                        Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
+                                            @([regex]'[A-Za-z]:\\Program\sFiles\\(?<File>.*\.exe)\s?').Matches($_) | 
+                                            Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                        )                                        
+                                        break
+                                    }
+                                    # ProgramFilesx86
+                                    '^[A-Za-z]:\\Program\sFiles\s\(x86\)\\' {
+                                        Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
+                                            @([regex]'[A-Za-z]:\\Program\sFiles\s\(x86\)\\(?<File>.*\.exe)\s?').Matches($_) | 
+                                            Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                        )
+                                        break
+                                    }
+                                    # C:\Users
+                                    '^"[A-Za-z]:\\' {
+                                        ($_ -split '"')[1]
+                                            break
+                                    }
+                                    default {
+                                        Write-Verbose -Message "default: $_"
+                                        [string]::Empty
+                                        # $_
+                                    }
+                                } 
+                            ) -Force -PassThru
+                        }
                         break
                     }
                     'LSA Providers' {
@@ -2082,6 +2155,13 @@ Begin {
                             '^"?[A-Za-z]:\\[Pp]rogram\s[fF]iles\s\(x86\)\\(?<FileName>.*\.[eE][xX][eE])\s?' {
                                 Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
                                     @([regex]'^"?[A-Za-z]:\\[Pp]rogram\s[fF]iles\s\(x86\)\\(?<FileName>.*\.[eE][xX][eE])\s?').Matches($_) | 
+                                    Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                )  
+                                break
+                            }
+                            '^"?[A-Za-z]:\\[Pp]rogram[dD]ata\\(?<FileName>.*\.[eE][xX][eE])\s?' {
+                                Join-Path -Path "$($env:ProgramData)" -ChildPath (
+                                    @([regex]'^"?[A-Za-z]:\\[Pp]rogram[dD]ata\\(?<FileName>.*\.[eE][xX][eE])\s?').Matches($_) | 
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                 )  
                                 break
