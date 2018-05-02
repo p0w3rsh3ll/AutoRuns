@@ -786,8 +786,11 @@ Begin {
 		            $key = "HKLM:\Software\$($_)\Microsoft\Windows NT\CurrentVersion\Image File Execution Options"
 		            (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
 			            Get-RegValue -Path "$key\$($_)" -Name 'Debugger' @Category
+                        if ((Get-ItemProperty -Path "$key\$($_)" -Name 'GlobalFlag' -ErrorAction SilentlyContinue).'GlobalFlag' -eq 512) {
+                            Get-RegValue -Path "$($key -replace 'Image\sFile\sExecution\sOptions','SilentProcessExit')\$($_)" -Name 'MonitorProcess' @Category
+                        }
 		            }
-	            }		
+	            }
 
                 # Autorun macro	
 	            $null,'Wow6432Node' | Foreach-Object {
