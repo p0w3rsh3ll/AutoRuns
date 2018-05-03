@@ -1880,6 +1880,13 @@ Begin {
                                     )                                        
                                     break
                                 }
+                                '^("|\\\?\?\\)?[A-Za-z]:\\[Pp]rogram\s[fF]iles(\s\(x86\))\\(?<FilePath>.*\.[A-Za-z]{3})\s?' {
+                                    Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
+                                        @([regex]'^("|\\\?\?\\)?[A-Za-z]:\\[Pp]rogram\s[fF]iles(\s\(x86\))\\(?<FilePath>.*\.[A-Za-z]{3})\s?').Matches($_) | 
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )                                        
+                                    break
+                                }
                                 '^(\\\?\?\\)?C:\\ProgramData' {
                                     $_ -replace '\\\?\?\\',''
                                     break;
