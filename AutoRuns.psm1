@@ -1746,7 +1746,7 @@ Begin {
                                 # ProgramFiles
                                 '^"?(C:\\Program\sFiles|%ProgramFiles%)\\' {
                                     Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
-                                        @([regex]'^"?(C:\\Program\sFiles|%ProgramFiles%)\\(?<File>.*\.exe)("|\s)?').Matches($_) | 
+                                        @([regex]'^"?(C:\\Program\sFiles|%ProgramFiles%)\\(?<File>.*\.[a-z0-9]{1,})("|\s)?').Matches($_) | 
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )                                        
                                     break
@@ -1754,7 +1754,7 @@ Begin {
                                 # ProgramFilesx86
                                 '^"?(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\' {
                                     Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
-                                        @([regex]'^"?(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\(?<File>.*\.exe)("|\s)?').Matches($_) | 
+                                        @([regex]'^"?(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\(?<File>.*\.[a-z0-9]{1,})("|\s)?').Matches($_) | 
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
