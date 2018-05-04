@@ -2367,6 +2367,10 @@ Begin {
 
                             ## Add the signer itself
                             $_ | Add-Member -MemberType NoteProperty -Name Publisher -Value $signature.SignerCertificate.Subject -Force -PassThru
+                        } else {
+                            $_ = $_ | Add-Member -MemberType NoteProperty -Name Signed -Value $null -Force -PassThru
+                            $_ = $_ | Add-Member -MemberType NoteProperty -Name IsOSBinary -Value $null -Force -PassThru
+                            $_ | Add-Member -MemberType NoteProperty -Name Publisher -Value $null -Force -PassThru
                         }
                     } else {
                         $_ = $_ | Add-Member -MemberType NoteProperty -Name Signed -Value $null -Force -PassThru
