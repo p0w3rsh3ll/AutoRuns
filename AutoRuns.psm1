@@ -1693,6 +1693,17 @@ Begin {
                                     )
                                     break
                                 }
+                                # special powershell.exe file.ps1
+                                # special powershell.exe -f file.ps1 -exec bypass
+                                # special powershell.exe -fil file.ps1 -exec bypass
+                                # special powershell.exe -exec bypass -file file.ps1
+                                # special powershell.exe -exec bypass -file file.ps1
+                                # but not powershell.exe -enc base64 or powershell.exe -command "cmd"
+                                '[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}\.[eE][xX][eE](\s{1,}-[^Ff].+\s{1,})?(\s{1,}-[fF][iI]?[lL]?[eE]?\s{1,})?(?<File>.*\.[pP][sS]1)(\s)?' {
+                                    @([regex]'[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}\.[eE][xX][eE](\s{1,}-[^Ff].+\s{1,})?(\s{1,}-[fF][iI]?[lL]?[eE]?\s{1,})?(?<File>.*\.[pP][sS]1)(\s)?').Matches($_) | 
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    break
+                                }
                                 # Windir\system32
                                 '^(%windir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\.*\.(exe|vbs)' {
                                     Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
