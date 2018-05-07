@@ -786,8 +786,11 @@ Begin {
 		            $key = "HKLM:\Software\$($_)\Microsoft\Windows NT\CurrentVersion\Image File Execution Options"
 		            (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
 			            Get-RegValue -Path "$key\$($_)" -Name 'Debugger' @Category
+                        if ((Get-ItemProperty -Path "$key\$($_)" -Name 'GlobalFlag' -ErrorAction SilentlyContinue).'GlobalFlag' -eq 512) {
+                            Get-RegValue -Path "$($key -replace 'Image\sFile\sExecution\sOptions','SilentProcessExit')\$($_)" -Name 'MonitorProcess' @Category
+                        }
 		            }
-	            }		
+	            }
 
                 # Autorun macro	
 	            $null,'Wow6432Node' | Foreach-Object {
@@ -1690,6 +1693,17 @@ Begin {
                                     )
                                     break
                                 }
+                                # special powershell.exe file.ps1
+                                # special powershell.exe -f file.ps1 -exec bypass
+                                # special powershell.exe -fil file.ps1 -exec bypass
+                                # special powershell.exe -exec bypass -file file.ps1
+                                # special powershell.exe -exec bypass -file file.ps1
+                                # but not powershell.exe -enc base64 or powershell.exe -command "cmd"
+                                '[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}\.[eE][xX][eE](\s{1,}-[^Ff].+\s{1,})?(\s{1,}-[fF][iI]?[lL]?[eE]?\s{1,})?(?<File>.*\.[pP][sS]1)(\s)?' {
+                                    @([regex]'[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}\.[eE][xX][eE](\s{1,}-[^Ff].+\s{1,})?(\s{1,}-[fF][iI]?[lL]?[eE]?\s{1,})?(?<File>.*\.[pP][sS]1)(\s)?').Matches($_) | 
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    break
+                                }
                                 # Windir\system32
                                 '^(%windir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\.*\.(exe|vbs)' {
                                     Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
@@ -1743,7 +1757,7 @@ Begin {
                                 # ProgramFiles
                                 '^"?(C:\\Program\sFiles|%ProgramFiles%)\\' {
                                     Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
-                                        @([regex]'^"?(C:\\Program\sFiles|%ProgramFiles%)\\(?<File>.*\.exe)("|\s)?').Matches($_) | 
+                                        @([regex]'^"?(C:\\Program\sFiles|%ProgramFiles%)\\(?<File>.*\.[a-z0-9]{1,})("|\s)?').Matches($_) | 
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )                                        
                                     break
@@ -1751,7 +1765,7 @@ Begin {
                                 # ProgramFilesx86
                                 '^"?(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\' {
                                     Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
-                                        @([regex]'^"?(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\(?<File>.*\.exe)("|\s)?').Matches($_) | 
+                                        @([regex]'^"?(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\(?<File>.*\.[a-z0-9]{1,})("|\s)?').Matches($_) | 
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
@@ -1873,6 +1887,13 @@ Begin {
                                 '^("|\\\?\?\\)?[A-Za-z]:\\[Pp]rogram\s[fF]iles\\(?<FilePath>.*\.[A-Za-z]{3})\s?' {
                                     Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
                                         @([regex]'^("|\\\?\?\\)?[A-Za-z]:\\[Pp]rogram\s[fF]iles\\(?<FilePath>.*\.[A-Za-z]{3})\s?').Matches($_) | 
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )                                        
+                                    break
+                                }
+                                '^("|\\\?\?\\)?[A-Za-z]:\\[Pp]rogram\s[fF]iles(\s\(x86\))\\(?<FilePath>.*\.[A-Za-z]{3})\s?' {
+                                    Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
+                                        @([regex]'^("|\\\?\?\\)?[A-Za-z]:\\[Pp]rogram\s[fF]iles(\s\(x86\))\\(?<FilePath>.*\.[A-Za-z]{3})\s?').Matches($_) | 
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )                                        
                                     break
@@ -2346,6 +2367,10 @@ Begin {
 
                             ## Add the signer itself
                             $_ | Add-Member -MemberType NoteProperty -Name Publisher -Value $signature.SignerCertificate.Subject -Force -PassThru
+                        } else {
+                            $_ = $_ | Add-Member -MemberType NoteProperty -Name Signed -Value $null -Force -PassThru
+                            $_ = $_ | Add-Member -MemberType NoteProperty -Name IsOSBinary -Value $null -Force -PassThru
+                            $_ | Add-Member -MemberType NoteProperty -Name Publisher -Value $null -Force -PassThru
                         }
                     } else {
                         $_ = $_ | Add-Member -MemberType NoteProperty -Name Signed -Value $null -Force -PassThru
