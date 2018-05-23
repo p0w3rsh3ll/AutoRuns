@@ -1469,42 +1469,48 @@ Begin {
 
                 #region Scheduled Tasks
 
-                Get-AllScheduledTask | Get-Task | ForEach-Object {
-                    $Value = $null
-                    $Value = if (
-                        ($node = ([xml]$_.XML).Task.get_ChildNodes() | Where-Object Name -eq 'Actions' ).HasChildNodes
-                    ) {
+                Get-AllScheduledTask | Get-Task | 
+                ForEach-Object {
+                    $Task = $_
+                    $node = ([xml]$_.XML).Task.get_ChildNodes() | Where-Object Name -eq 'Actions'
+                    if ($node.HasChildNodes) {
+                    
                         # $node can have Exec or comHandler or both childs (ex: MediaCenter tasks)
-                        switch ($node.get_ChildNodes().Name) {
-                            Exec {
-                                $subnode = ($node.get_ChildNodes() | Where-Object { $_.Name -eq 'Exec'})
-                                if ($subnode.get_ChildNodes() | Where-Object Name -eq 'Arguments' | Select-Object -ExpandProperty '#text') {
-                                    '{0} {1}' -f ($subnode.get_ChildNodes() | Where-Object Name -eq 'Command' | Select-Object -ExpandProperty '#text'), 
-                                    ($subnode.get_ChildNodes() | Where-Object Name -eq 'Arguments' | Select-Object -ExpandProperty '#text');
-                                } else {
-                                    $subnode.get_ChildNodes() | Where-Object Name -eq 'Command' | Select-Object -ExpandProperty '#text' ; 
+                        $node.get_ChildNodes() | 
+                        ForEach-Object {
+                            $Value = $null
+                            $subnode = $_
+                            $Value = switch ($_.Name) {
+                                Exec {
+                                    # $subnode = ($node.get_ChildNodes() | Where-Object { $_.Name -eq 'Exec'})
+                                    if ($subnode.get_ChildNodes() | Where-Object Name -eq 'Arguments' | Select-Object -ExpandProperty '#text') {
+                                        '{0} {1}' -f ($subnode.get_ChildNodes() | Where-Object Name -eq 'Command' | Select-Object -ExpandProperty '#text'), 
+                                        ($subnode.get_ChildNodes() | Where-Object Name -eq 'Arguments' | Select-Object -ExpandProperty '#text');
+                                    } else {
+                                        $subnode.get_ChildNodes() | Where-Object Name -eq 'Command' | Select-Object -ExpandProperty '#text' ; 
+                                    }
+                                    break;
                                 }
-                                break;
-                            }
-                            ComHandler {
-                                $subnode = ($node.get_ChildNodes() | Where-Object { $_.Name -eq 'ComHandler'})
-                                if ($subnode.get_ChildNodes()| Where-Object Name -eq 'Data' | Select-Object -ExpandProperty InnerText) {
-                                    '{0} {1}'-f ($subnode.get_ChildNodes() | Where-Object Name -eq 'ClassId' | Select-Object -ExpandProperty '#text'),
-                                    ($subnode.get_ChildNodes() | Where-Object Name -eq 'Data' | Select-Object -ExpandProperty InnerText); 
-                                } else {
-                                    $subnode.get_ChildNodes() | Where-Object Name -eq 'ClassId' | Select-Object -ExpandProperty '#text'; 
+                                ComHandler {
+                                    # $subnode = ($node.get_ChildNodes() | Where-Object { $_.Name -eq 'ComHandler'})
+                                    if ($subnode.get_ChildNodes()| Where-Object Name -eq 'Data' | Select-Object -ExpandProperty InnerText) {
+                                        '{0} {1}'-f ($subnode.get_ChildNodes() | Where-Object Name -eq 'ClassId' | Select-Object -ExpandProperty '#text'),
+                                        ($subnode.get_ChildNodes() | Where-Object Name -eq 'Data' | Select-Object -ExpandProperty InnerText); 
+                                    } else {
+                                        $subnode.get_ChildNodes() | Where-Object Name -eq 'ClassId' | Select-Object -ExpandProperty '#text'; 
+                                    }
+                                    break;
                                 }
-                                break;
+                                default {}
                             }
-                            default {}
-                        }
-                    }
 
-                    [pscustomobject]@{
-                        Path = (Join-Path -Path "$($env:systemroot)\system32\Tasks" -ChildPath "$($_.Path)\$($_.Name)") ;
-                        Item = $_.Name
-                        Value =  $Value ;
-                        Category = 'Task' ;
+                            [pscustomobject]@{
+                                Path = (Join-Path -Path "$($env:systemroot)\system32\Tasks" -ChildPath "$($Task.Path)\$($Task.Name)") ;
+                                Item = $Task.Name
+                                Value =  $Value ;
+                                Category = 'Task' ;
+                            }
+                        }
                     }
                 }
 
