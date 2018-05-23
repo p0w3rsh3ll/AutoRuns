@@ -1945,8 +1945,8 @@ Begin {
                         } else {
                             $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(    
                                 Switch -Regex ($Item.Value) {
-                                '^"?(?<FileName>.*\.[A-Z]{3})"?\s?%?' {
-                                    @([regex]'^"?(?<FileName>.*\.[A-Z]{3})"?\s?%?').Matches($_) | 
+                                '^"?(?<FileName>.*\.[A-Za-z0-9]{3})"?\s?%?' {
+                                    @([regex]'^"?(?<FileName>.*\.[A-Za-z0-9]{3})"?\s?%?').Matches($_) | 
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     break
                                 }
