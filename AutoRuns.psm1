@@ -1469,42 +1469,48 @@ Begin {
 
                 #region Scheduled Tasks
 
-                Get-AllScheduledTask | Get-Task | ForEach-Object {
-                    $Value = $null
-                    $Value = if (
-                        ($node = ([xml]$_.XML).Task.get_ChildNodes() | Where-Object Name -eq 'Actions' ).HasChildNodes
-                    ) {
+                Get-AllScheduledTask | Get-Task | 
+                ForEach-Object {
+                    $Task = $_
+                    $node = ([xml]$_.XML).Task.get_ChildNodes() | Where-Object Name -eq 'Actions'
+                    if ($node.HasChildNodes) {
+                    
                         # $node can have Exec or comHandler or both childs (ex: MediaCenter tasks)
-                        switch ($node.get_ChildNodes().Name) {
-                            Exec {
-                                $subnode = ($node.get_ChildNodes() | Where-Object { $_.Name -eq 'Exec'})
-                                if ($subnode.get_ChildNodes() | Where-Object Name -eq 'Arguments' | Select-Object -ExpandProperty '#text') {
-                                    '{0} {1}' -f ($subnode.get_ChildNodes() | Where-Object Name -eq 'Command' | Select-Object -ExpandProperty '#text'), 
-                                    ($subnode.get_ChildNodes() | Where-Object Name -eq 'Arguments' | Select-Object -ExpandProperty '#text');
-                                } else {
-                                    $subnode.get_ChildNodes() | Where-Object Name -eq 'Command' | Select-Object -ExpandProperty '#text' ; 
+                        $node.get_ChildNodes() | 
+                        ForEach-Object {
+                            $Value = $null
+                            $subnode = $_
+                            $Value = switch ($_.Name) {
+                                Exec {
+                                    # $subnode = ($node.get_ChildNodes() | Where-Object { $_.Name -eq 'Exec'})
+                                    if ($subnode.get_ChildNodes() | Where-Object Name -eq 'Arguments' | Select-Object -ExpandProperty '#text') {
+                                        '{0} {1}' -f ($subnode.get_ChildNodes() | Where-Object Name -eq 'Command' | Select-Object -ExpandProperty '#text'), 
+                                        ($subnode.get_ChildNodes() | Where-Object Name -eq 'Arguments' | Select-Object -ExpandProperty '#text');
+                                    } else {
+                                        $subnode.get_ChildNodes() | Where-Object Name -eq 'Command' | Select-Object -ExpandProperty '#text' ; 
+                                    }
+                                    break;
                                 }
-                                break;
-                            }
-                            ComHandler {
-                                $subnode = ($node.get_ChildNodes() | Where-Object { $_.Name -eq 'ComHandler'})
-                                if ($subnode.get_ChildNodes()| Where-Object Name -eq 'Data' | Select-Object -ExpandProperty InnerText) {
-                                    '{0} {1}'-f ($subnode.get_ChildNodes() | Where-Object Name -eq 'ClassId' | Select-Object -ExpandProperty '#text'),
-                                    ($subnode.get_ChildNodes() | Where-Object Name -eq 'Data' | Select-Object -ExpandProperty InnerText); 
-                                } else {
-                                    $subnode.get_ChildNodes() | Where-Object Name -eq 'ClassId' | Select-Object -ExpandProperty '#text'; 
+                                ComHandler {
+                                    # $subnode = ($node.get_ChildNodes() | Where-Object { $_.Name -eq 'ComHandler'})
+                                    if ($subnode.get_ChildNodes()| Where-Object Name -eq 'Data' | Select-Object -ExpandProperty InnerText) {
+                                        '{0} {1}'-f ($subnode.get_ChildNodes() | Where-Object Name -eq 'ClassId' | Select-Object -ExpandProperty '#text'),
+                                        ($subnode.get_ChildNodes() | Where-Object Name -eq 'Data' | Select-Object -ExpandProperty InnerText); 
+                                    } else {
+                                        $subnode.get_ChildNodes() | Where-Object Name -eq 'ClassId' | Select-Object -ExpandProperty '#text'; 
+                                    }
+                                    break;
                                 }
-                                break;
+                                default {}
                             }
-                            default {}
-                        }
-                    }
 
-                    [pscustomobject]@{
-                        Path = (Join-Path -Path "$($env:systemroot)\system32\Tasks" -ChildPath "$($_.Path)\$($_.Name)") ;
-                        Item = $_.Name
-                        Value =  $Value ;
-                        Category = 'Task' ;
+                            [pscustomobject]@{
+                                Path = (Join-Path -Path "$($env:systemroot)\system32\Tasks" -ChildPath "$($Task.Path)\$($Task.Name)") ;
+                                Item = $Task.Name
+                                Value =  $Value ;
+                                Category = 'Task' ;
+                            }
+                        }
                     }
                 }
 
@@ -1699,15 +1705,15 @@ Begin {
                                 # special powershell.exe -exec bypass -file file.ps1
                                 # special powershell.exe -exec bypass -file file.ps1
                                 # but not powershell.exe -enc base64 or powershell.exe -command "cmd"
-                                '[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}\.[eE][xX][eE](\s{1,}-[^Ff].+\s{1,})?(\s{1,}-[fF][iI]?[lL]?[eE]?\s{1,})?(?<File>.*\.[pP][sS]1)(\s)?' {
-                                    @([regex]'[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}\.[eE][xX][eE](\s{1,}-[^Ff].+\s{1,})?(\s{1,}-[fF][iI]?[lL]?[eE]?\s{1,})?(?<File>.*\.[pP][sS]1)(\s)?').Matches($_) | 
-                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                '[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}\.[eE][xX][eE](\s{1,}-[^Ff].+\s{1,})?(\s{1,}-[fF][iI]?[lL]?[eE]?\s{1,})?(?<File>.*\.[pP][sS]1)"?(\s)?' {
+                                    @([regex]'[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}\.[eE][xX][eE](\s{1,}-[^Ff].+\s{1,})?(\s{1,}-[fF][iI]?[lL]?[eE]?\s{1,})?(?<File>.*\.[pP][sS]1)"?(\s)?').Matches($_) | 
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value | ForEach-Object  { ($_ -replace '"','').Trim()}
                                     break
                                 }
                                 # Windir\system32
-                                '^(%windir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\.*\.(exe|vbs)' {
+                                '^(%(w|W)in(d|D)ir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\.*\.(exe|vbs)' {
                                     Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
-                                        @([regex]'^(%windir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\(?<File>.*\.(exe|vbs))(\s)?').Matches($_) | 
+                                        @([regex]'^(%(w|W)in(d|D)ir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\(?<File>.*\.(exe|vbs))(\s)?').Matches($_) | 
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
@@ -1945,8 +1951,8 @@ Begin {
                         } else {
                             $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(    
                                 Switch -Regex ($Item.Value) {
-                                '^"?(?<FileName>.*\.[A-Z]{3})"?\s?%?' {
-                                    @([regex]'^"?(?<FileName>.*\.[A-Z]{3})"?\s?%?').Matches($_) | 
+                                '^"?(?<FileName>.*\.[A-Za-z0-9]{3})"?\s?%?' {
+                                    @([regex]'^"?(?<FileName>.*\.[A-Za-z0-9]{3})"?\s?%?').Matches($_) | 
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     break
                                 }
