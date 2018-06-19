@@ -1699,15 +1699,23 @@ Begin {
                                     )
                                     break
                                 }
-                                # special powershell.exe file.ps1
-                                # special powershell.exe -f file.ps1 -exec bypass
-                                # special powershell.exe -fil file.ps1 -exec bypass
-                                # special powershell.exe -exec bypass -file file.ps1
-                                # special powershell.exe -exec bypass -file file.ps1
-                                # but not powershell.exe -enc base64 or powershell.exe -command "cmd"
-                                '[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}\.[eE][xX][eE](\s{1,}-[^Ff].+\s{1,})?(\s{1,}-[fF][iI]?[lL]?[eE]?\s{1,})?(?<File>.*\.[pP][sS]1)"?(\s)?' {
-                                    @([regex]'[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}\.[eE][xX][eE](\s{1,}-[^Ff].+\s{1,})?(\s{1,}-[fF][iI]?[lL]?[eE]?\s{1,})?(?<File>.*\.[pP][sS]1)"?(\s)?').Matches($_) | 
-                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value | ForEach-Object  { ($_ -replace '"','').Trim()}
+                                # special powershell
+                                '[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}' {
+                                    switch -regex ($_) {
+                                        '\s-[fF]' {
+                                            @([regex]'(-[fF][iI]?[lL]?[eE]?)\s{1,}?"?(?<File>.+\.[pP][sS]1)"?\s?').Matches($_) | 
+                                            Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value | ForEach-Object  { ($_ -replace '"','').Trim()}
+                                            break
+                                        }
+                                        '.[pP][sS]1' {
+                                            @([regex]'\s{1,}"?(?<File>.+\.[pP][sS]1)"?\s?').Matches($_) | 
+                                            Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                            break
+                                        }
+                                        default {
+                                            $_
+                                        }
+                                    }
                                     break
                                 }
                                 # Windir\system32
@@ -1774,11 +1782,6 @@ Begin {
                                         @([regex]'^"?(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\(?<File>.*\.[a-z0-9]{1,})("|\s)?').Matches($_) | 
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
-                                    break
-                                }
-                                # special powershell.exe
-                                '^[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}\.[eE][xX][eE](\s)?' {
-                                    "$($env:systemroot)\system32\WindowsPowerShell\v1.0\powershell.exe"
                                     break
                                 }
                                 # C:\users? 
@@ -2191,6 +2194,11 @@ Begin {
                                     @([regex]'^"?[A-Za-z]:\\[Pp]rogram[dD]ata\\(?<FileName>.*\.[eE][xX][eE])\s?').Matches($_) | 
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                 )  
+                                break
+                            }
+                            '^"?(?<FilePath>[A-Za-z]:\\.*\.[eE][xX][eE])\s?' {
+                                @([regex]'^"?(?<FilePath>[A-Za-z]:\\.*\.[eE][xX][eE])\s?').Matches($_) | 
+                                Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                 break
                             }
                             'winhttp.dll' {
