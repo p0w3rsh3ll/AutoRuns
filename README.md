@@ -1,4 +1,4 @@
-AutoRuns PowerShell Module
+﻿AutoRuns PowerShell Module
 ==========================
 
 **AutoRuns module was designed to help do live incident response and enumerate autoruns artifacts that may be used by legitimate programs as well as malware to achieve persistence.**
@@ -28,7 +28,7 @@ Find-Module -Name Autoruns -Repository PSGallery
 ```
 Version    Name                                Repository           Description
 -------    ----                                ----------           -----------                                   
-13.82      AutoRuns                            PSGallery            AutoRuns is a module ...
+13.82.1    AutoRuns                            PSGallery            AutoRuns is a module ...
 ```
 
 ```powershell
@@ -41,8 +41,8 @@ Stop and please review the content of the module, I mean the code to make sure i
 You can also verify that the SHA256 hashes of downloaded files match those stored in the catalog file
 ```powershell
 $HT = @{
-    CatalogFilePath = "~/Downloads/AutoRuns/13.82/AutoRuns.cat"
-    Path = "~/Downloads/AutoRuns/13.82"
+    CatalogFilePath = "~/Downloads/AutoRuns/13.82.1/AutoRuns.cat"
+    Path = "~/Downloads/AutoRuns/13.82.1"
     Detailed = $true
     FilesToSkip = 'PSGetModuleInfo.xml'
 }
@@ -51,7 +51,7 @@ Test-FileCatalog @HT
 
 ```powershell
 # Import the module
-Import-Module ~/Downloads/AutoRuns/13.82/AutoRuns.psd1 -Force -Verbose
+Import-Module ~/Downloads/AutoRuns/13.82.1/AutoRuns.psd1 -Force -Verbose
 ```
 
 <a name="Functions"/>
@@ -63,7 +63,7 @@ Get-Command -Module AutoRuns
 ```
 CommandType     Name                                               Version    Source
 -----------     ----                                               -------    ------
-Function        Get-PSAutorun                                      13.82      AutoRuns
+Function        Get-PSAutorun                                      13.82.1    AutoRuns
 ```
 
 

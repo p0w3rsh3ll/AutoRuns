@@ -4,20 +4,20 @@ Function Get-PSAutorun {
 <#
     .SYNOPSIS
         Get Autorun entries.
-     
+
     .DESCRIPTION
         Retrieve a list of programs configured to autostart at boot or logon.
-      
+
     .PARAMETER All
-        Switch to gather artifacts from all categories. 
+        Switch to gather artifacts from all categories.
         If it's turned on, all other category switches will be ignored.
-      
+
     .PARAMETER BootExecute
         Switch to gather artifacts from the Boot Execute category.
 
     .PARAMETER AppinitDLLs
         Switch to gather artifacts from the Appinit category.
-    
+
     .PARAMETER ExplorerAddons
         Switch to gather artifacts from the Explorer category.
 
@@ -68,7 +68,7 @@ Function Get-PSAutorun {
 
     .PARAMETER VerifyDigitalSignature
         Switch to report if a file is digitally signed with the built-in Get-AuthenticodeSignature cmdlet.
-              
+
     .EXAMPLE
         Get-PSAutorun -BootExecute -AppinitDLLs
 
@@ -122,34 +122,34 @@ Begin {
             [Alias('PSPath')]
             [System.String[]]
             $LiteralPath,
-        
+
             [ValidateSet('SHA1', 'SHA256', 'SHA384', 'SHA512', 'MACTripleDES', 'MD5', 'RIPEMD160')]
             [System.String]
             $Algorithm='SHA256'
         )
-    
+
         Begin {
             # Construct the strongly-typed crypto object
             $hasher = [System.Security.Cryptography.HashAlgorithm]::Create($Algorithm)
         }
         Process {
             $pathsToProcess = @()
-        
+
             if($PSCmdlet.ParameterSetName  -eq 'LiteralPath') {
                 $pathsToProcess += Resolve-Path -LiteralPath $LiteralPath | Foreach-Object ProviderPath
             } else {
                 $pathsToProcess += Resolve-Path $Path | Foreach-Object ProviderPath
             }
-        
+
             foreach($filePath in $pathsToProcess) {
                 if(Test-Path -LiteralPath $filePath -PathType Container) {
                     continue
                 }
-            
+
                 try {
                     # Read the file specified in $FilePath as a Byte array
                     [system.io.stream]$stream = [system.io.file]::OpenRead($FilePath)
-                
+
                     # Compute file-hash using the crypto object
                     [Byte[]] $computedHash = $hasher.ComputeHash($stream)
                 } catch [Exception] {
@@ -161,10 +161,10 @@ Begin {
                         $stream.Close()
                     }
                 }
-                        
+
                 # Convert to hex-encoded string
                 [string] $hash = [BitConverter]::ToString($computedHash) -replace '-',''
-                
+
                 $retVal = [PSCustomObject] @{
                     Algorithm = $Algorithm.ToUpperInvariant()
                     Hash = $hash
@@ -205,7 +205,7 @@ Begin {
                             break
                         }
                         default {
-                            $_ 
+                            $_
                         }
                     }
                     if ($Value) {
@@ -240,7 +240,6 @@ Begin {
                 } else {
                     $TaskService.GetFolder($folder).GetFolders(0)
                 }
-   
             }
         }
         Process {
@@ -348,7 +347,7 @@ Begin {
                 }
             }
             $resultsar
-        } 
+        }
         End {}
     }
 
@@ -424,7 +423,7 @@ Begin {
                     Write-Error "Value '$_path' could not be parsed as a FileSystem path: $($exception.Message)"
                     continue
                 }
-    
+
                 $_resolved = $dirInfo.FullName
 
                 if ($IncludeProviderPrefix) {
@@ -432,9 +431,9 @@ Begin {
                 }
                 Write-Output $_resolved
             }
-        } 
+        }
     }
-    
+
     Function Get-PSRawAutoRun {
         [CmdletBinding()]
         Param(
@@ -512,7 +511,7 @@ Begin {
             if ($All -or $ExplorerAddons) {
                 Write-Verbose -Message 'Looking for Explorer Add-ons entries'
                 #region Explorer
-    
+
                 $Category = @{ Category = 'Explorer'}
 
                 # Filter & Handler
@@ -521,11 +520,11 @@ Begin {
                     if (Test-Path -Path $key -PathType Container) {
                         (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
                             if ($_ -eq 'ms-help') {
-                                if ([environment]::Is64BitOperatingSystem) {
-                                    $ClassesPath = 'HKLM:\SOFTWARE\Wow6432Node\Classes\CLSID'
-                                } else {
-                                    $ClassesPath = 'HKLM:\SOFTWARE\Classes\CLSID'
-                                }
+                                # if ([environment]::Is64BitOperatingSystem) {
+                                #     $ClassesPath = 'HKLM:\SOFTWARE\Wow6432Node\Classes\CLSID'
+                                # } else {
+                                #     $ClassesPath = 'HKLM:\SOFTWARE\Classes\CLSID'
+                                # }
                                 $i = (Get-ItemProperty -Path "$key\ms-help" -Name 'CLSID').CLSID
                                 [pscustomobject]@{
                                     Path = "$key\ms-help"
@@ -584,7 +583,7 @@ Begin {
                          }
                     }
                 }
-    
+
                 # ShellServiceObjectDelayLoad
                 $null,'Wow6432Node' | Foreach-Object -Process {
                     Get-RegValue -Path "HKLM:\SOFTWARE\$($_)\Microsoft\Windows\CurrentVersion\ShellServiceObjectDelayLoad" -Name '*' @Category
@@ -599,11 +598,11 @@ Begin {
                     @{Name ='Directory\Background'  ; Properties = @('ContextMenuHandlers')},
                     @{Name ='Folder' ; Properties = @('ColumnHandlers','ContextMenuHandlers','DragDropHandlers','ExtShellFolderViews','PropertySheetHandlers')}
                 ) | ForEach-Object -Process {
-        
+
                     $Name = $_.Name
                     $Properties = $_.Properties
 
-                    $null,'Wow6432Node' | Foreach-Object -Process { 
+                    $null,'Wow6432Node' | Foreach-Object -Process {
                         $key = "HKLM:\Software\$($_)\Classes\$Name\ShellEx"
                         $ClassPath = "HKLM:\Software\$($_)\Classes\CLSID"
                         $Hive = $_
@@ -642,7 +641,7 @@ Begin {
                              }
                         }
                     }
-                } 
+                }
 
                 # ShellIconOverlayIdentifiers
                 $null,'Wow6432Node' | Foreach-Object -Process {
@@ -669,7 +668,7 @@ Begin {
                                 Get-RegValue -Path "$key\$($_)" -Name 'CLSID' @Category
                         }
                     }
-                }   
+                }
 
                 if (Test-Path -Path 'HKCU:\SOFTWARE\Microsoft\Internet Explorer\Desktop\Components' -PathType Container) {
                     $key = 'HKCU:\SOFTWARE\Microsoft\Internet Explorer\Desktop\Components'
@@ -691,7 +690,7 @@ Begin {
                         }
                     }
                 }
-    
+
                 # ShellServiceObjectDelayLoad
                 Get-RegValue -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ShellServiceObjectDelayLoad' -Name '*' @Category
 
@@ -704,7 +703,7 @@ Begin {
                     @{Name ='Directory\Background'  ; Properties = @('ContextMenuHandlers')},
                     @{Name ='Folder' ; Properties = @('ColumnHandlers','ContextMenuHandlers','DragDropHandlers','ExtShellFolderViews','PropertySheetHandlers')}
                 ) | ForEach-Object -Process {
-        
+
                     $Name = $_.Name
                     $Properties = $_.Properties
 
@@ -765,7 +764,7 @@ Begin {
 
                     Get-Content -Path (
                         Join-Path -Path (Split-Path -Path $($env:AppData) -Parent) -ChildPath 'Local\Microsoft\Windows Sidebar\Settings.ini'
-                    ) | 
+                    ) |
                     Select-String -Pattern '^PrivateSetting_GadgetName=' | ForEach-Object {
 
                             [pscustomobject]@{
@@ -792,11 +791,11 @@ Begin {
 		            }
 	            }
 
-                # Autorun macro	
+                # Autorun macro
 	            $null,'Wow6432Node' | Foreach-Object {
-		            Get-RegValue -Path "HKLM:\Software\$($_)\Microsoft\Command Processor" -Name 'Autorun' @Category		
+		            Get-RegValue -Path "HKLM:\Software\$($_)\Microsoft\Command Processor" -Name 'Autorun' @Category
 	            }
-	
+
                 # Exefile
                 [pscustomobject]@{
                     Path = 'HKLM:\SOFTWARE\Classes\Exefile\Shell\Open\Command'
@@ -804,12 +803,12 @@ Begin {
                     Value = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Classes\Exefile\Shell\Open\Command' -Name '(default)').'(default)'
                     Category = 'Image Hijacks'
                 }
-	
+
 	            '.exe','.cmd' | Foreach-Object {
 		            $assoc = (Get-ItemProperty -Path "HKLM:\Software\Classes\$($_)" -Name '(default)').'(default)'
                     [pscustomobject]@{
                         Path = "HKLM:\Software\Classes\$assoc\shell\open\command"
-                        Item = $_ 
+                        Item = $_
                         Value = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Classes\$assoc\Shell\Open\Command" -Name '(default)').'(default)'
                         Category = 'Image Hijacks'
                     }
@@ -826,8 +825,8 @@ Begin {
 
                 #region User Image Hijacks
 
-                Get-RegValue -Path 'HKCU:\Software\Microsoft\Command Processor' -Name 'Autorun' @Category		
-	
+                Get-RegValue -Path 'HKCU:\Software\Microsoft\Command Processor' -Name 'Autorun' @Category
+
                 # Exefile
                 if (Test-Path -Path 'HKCU:\SOFTWARE\Classes\Exefile\Shell\Open\Command') {
                     [pscustomobject]@{
@@ -837,14 +836,14 @@ Begin {
                         Category = 'Image Hijacks'
                     }
                 }
-	
+
 	            '.exe','.cmd' | Foreach-Object {
                     if (Test-Path -Path "HKCU:\Software\Classes\$($_)") {
 		                $assoc = (Get-ItemProperty -Path "HKCU:\Software\Classes\$($_)" -Name '(default)'-ErrorAction SilentlyContinue).'(default)'
                         if ($assoc) {
                             [pscustomobject]@{
                                 Path = "HKCU:\Software\Classes\$assoc\shell\open\command"
-                                Item = $_ 
+                                Item = $_
                                 Value = (Get-ItemProperty -Path "HKCU:\SOFTWARE\Classes\$assoc\Shell\Open\Command" -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
                                 Category = 'Image Hijacks'
                             }
@@ -868,7 +867,7 @@ Begin {
                 #region Internet Explorer
 
                 $Category = @{ Category = 'Internet Explorer'}
-    
+
                 # Browser Helper Objects
                 $null,'Wow6432Node' | Foreach-Object {
                     $ClassesPath =  "HKLM:\SOFTWARE\$($_)\Classes\CLSID"
@@ -993,10 +992,10 @@ Begin {
                                 Value = (Get-ItemProperty -Path (Join-Path -Path $key -ChildPath $_) -Name 'DllName' -ErrorAction Stop).'DllName'
                                 Category = 'Logon'
                             }
-                        } catch {}			
-		            }			
+                        } catch {}
+		            }
 	            }
-    
+
                 # Domain Group Policies scripts
                 'Startup','Shutdown','Logon','Logoff' | ForEach-Object -Process {
                     $key = "HKLM:\Software\Policies\Microsoft\Windows\System\Scripts\$($_)"
@@ -1004,11 +1003,11 @@ Begin {
                         (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
                             $subkey = (Join-Path -Path $key -ChildPath $_)
                             (Get-Item -Path $subkey).GetSubKeyNames() | ForEach-Object -Process {
-                                Get-RegValue -Path (Join-Path -Path $subkey -ChildPath $_) -Name 'script' @Category 
+                                Get-RegValue -Path (Join-Path -Path $subkey -ChildPath $_) -Name 'script' @Category
                             }
                         }
                     }
-                }    
+                }
 
                 # Local GPO scripts
                 'Startup','Shutdown' | ForEach-Object -Process {
@@ -1017,11 +1016,11 @@ Begin {
                         (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
                             $subkey = (Join-Path -Path $key -ChildPath $_)
                             (Get-Item -Path $subkey).GetSubKeyNames() | ForEach-Object -Process {
-                                Get-RegValue -Path (Join-Path -Path $subkey -ChildPath $_) -Name 'script' @Category 
+                                Get-RegValue -Path (Join-Path -Path $subkey -ChildPath $_) -Name 'script' @Category
                             }
                         }
                     }
-                }    
+                }
 
                 # Shell override by GPO
                 Get-RegValue -Path 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System' -Name 'Shell' @Category
@@ -1083,7 +1082,7 @@ Begin {
                 Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run' -Name '*' @Category
 
                 # Show all subkey that have a StubPath value
-                $null,'Wow6432Node' | Foreach-Object { 
+                $null,'Wow6432Node' | Foreach-Object {
                     $key = "HKLM:\SOFTWARE\$($_)\Microsoft\Active Setup\Installed Components"
                     (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
                         Get-RegValue -Path "$key\$($_)" -Name 'StubPath' @Category
@@ -1108,7 +1107,7 @@ Begin {
                             $subkey = (Join-Path -Path $key -ChildPath $_)
                             (Get-Item -Path $subkey).GetSubKeyNames() | ForEach-Object -Process {
                                 # (Join-Path -Path $subkey -ChildPath $_)
-                                Get-RegValue -Path (Join-Path -Path $subkey -ChildPath $_) -Name 'script' @Category 
+                                Get-RegValue -Path (Join-Path -Path $subkey -ChildPath $_) -Name 'script' @Category
                             }
 
                         }
@@ -1154,26 +1153,26 @@ Begin {
                         }
                     }
                 }
-    
+
                 Get-RegValue -Path 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows' -Name 'Load' @Category
                 Get-RegValue -Path 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows' -Name 'Run' @Category
 
                 # Run by GPO
                 Get-RegValue -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run' -Name '*' @Category
-    
+
                 # Run
                 $null,'Wow6432Node' | ForEach-Object {
-                    Get-RegValue -Path "HKCU:\Software\$($_)\Microsoft\Windows\CurrentVersion\Run" -Name '*' @Category 
+                    Get-RegValue -Path "HKCU:\Software\$($_)\Microsoft\Windows\CurrentVersion\Run" -Name '*' @Category
                 }
 
                 # RunOnce
                 $null,'Wow6432Node' | ForEach-Object {
-                    Get-RegValue -Path "HKCU:\Software\$($_)\Microsoft\Windows\CurrentVersion\RunOnce" -Name '*' @Category 
+                    Get-RegValue -Path "HKCU:\Software\$($_)\Microsoft\Windows\CurrentVersion\RunOnce" -Name '*' @Category
                 }
 
                 # RunOnceEx
                 $null,'Wow6432Node' | ForEach-Object {
-                    Get-RegValue -Path "HKCU:\Software\$($_)\Microsoft\Windows\CurrentVersion\RunOnceEx" -Name '*' @Category 
+                    Get-RegValue -Path "HKCU:\Software\$($_)\Microsoft\Windows\CurrentVersion\RunOnceEx" -Name '*' @Category
                 }
 
                 #endregion User Logon
@@ -1223,7 +1222,7 @@ Begin {
                 # Drivers32
 	            $null,'Wow6432Node' | Foreach-Object {
 		            Get-RegValue -Path "HKLM:\Software\$($_)\Microsoft\Windows NT\CurrentVersion\Drivers32" -Name '*' @Category
-	            }		
+	            }
 
                 # Filter
 	            $key = 'HKLM:\Software\Classes\Filter'
@@ -1234,8 +1233,8 @@ Begin {
                             Item = $_
                             Value = (Get-ItemProperty -Path (Join-Path -Path 'HKLM:\SOFTWARE\Classes\CLSID' -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
                             Category = 'Codecs'
-                        }			
-		            }			
+                        }
+		            }
 	            }
 
                 # Instances
@@ -1254,11 +1253,10 @@ Begin {
                                         Value = (Get-ItemProperty -Path (Join-Path -Path $clsidp -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction Stop).'(default)'
 	                                    Category = 'Codecs'
 	                                }
-                                } catch {
-                                }		
+                                } catch {}
 			                }
-                        }		
-		            }			
+                        }
+		            }
 	            }
                 #endregion Codecs
 
@@ -1267,7 +1265,7 @@ Begin {
                 # Drivers32
 	            $null,'Wow6432Node' | Foreach-Object {
 		            Get-RegValue -Path "HKCU:\Software\$($_)\Microsoft\Windows NT\CurrentVersion\Drivers32" -Name '*' @Category
-	            }		
+	            }
 
                 # Filter
 	            $key = 'HKCU:\Software\Classes\Filter'
@@ -1278,8 +1276,8 @@ Begin {
                             Item = $_
                             Value = (Get-ItemProperty -Path (Join-Path -Path 'HKCU:\SOFTWARE\Classes\CLSID' -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
                             Category = 'Codecs'
-                        }			
-		            }			
+                        }
+		            }
 	            }
 
                 # Instances
@@ -1298,12 +1296,11 @@ Begin {
 	                                    Category = 'Codecs'
 	                                }
                                 } catch {
-                                }		
+                                }
 			                }
-                        }		
-		            }			
+                        }
+		            }
 	            }
-
 
                 #endregion User Codecs
             }
@@ -1351,7 +1348,7 @@ Begin {
                             }
                         }
                     } # hklm or hkcu
-                } 
+                }
                 # Microsoft Office Memory Corruption Vulnerability (CVE-2015-1641)
                 'HKLM','HKCU' | ForEach-Object {
                     $root = $_
@@ -1366,7 +1363,7 @@ Begin {
 	                        }
                         }
                     }
-                }                
+                }
                 #endregion Office Addins
             }
             if ($All -or $PrintMonitorDLLs) {
@@ -1391,9 +1388,9 @@ Begin {
                 #region LSA providers
 	            $Category = @{ Category = 'LSA Providers'}
 
-                # REG_SZ 
+                # REG_SZ
 	            Get-RegValue -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders' -Name 'SecurityProviders' @Category
-	
+
                 # REG_MULTI_SZ
 	            'Authentication Packages','Notification Packages','Security Packages' | ForEach-Object {
 		            $item = $_
@@ -1451,8 +1448,8 @@ Begin {
                                 Get-RegValue -Path "$key\Parameters" -Name 'ServiceDll' -Category 'Services'
                                 break
                             }
-                            default { 
-                                # $_ 
+                            default {
+                                # $_
                             }
                         }
                     }
@@ -1469,35 +1466,35 @@ Begin {
 
                 #region Scheduled Tasks
 
-                Get-AllScheduledTask | Get-Task | 
+                Get-AllScheduledTask | Get-Task |
                 ForEach-Object {
                     $Task = $_
-                    $node = ([xml]$_.XML).Task.get_ChildNodes() | Where-Object Name -eq 'Actions'
+                    $node = ([xml]$_.XML).Task.get_ChildNodes() | Where-Object { $_.Name -eq 'Actions'}
                     if ($node.HasChildNodes) {
-                    
+
                         # $node can have Exec or comHandler or both childs (ex: MediaCenter tasks)
-                        $node.get_ChildNodes() | 
+                        $node.get_ChildNodes() |
                         ForEach-Object {
                             $Value = $null
                             $subnode = $_
                             $Value = switch ($_.Name) {
                                 Exec {
                                     # $subnode = ($node.get_ChildNodes() | Where-Object { $_.Name -eq 'Exec'})
-                                    if ($subnode.get_ChildNodes() | Where-Object Name -eq 'Arguments' | Select-Object -ExpandProperty '#text') {
-                                        '{0} {1}' -f ($subnode.get_ChildNodes() | Where-Object Name -eq 'Command' | Select-Object -ExpandProperty '#text'), 
-                                        ($subnode.get_ChildNodes() | Where-Object Name -eq 'Arguments' | Select-Object -ExpandProperty '#text');
+                                    if ($subnode.get_ChildNodes() | Where-Object { $_.Name -eq 'Arguments' } | Select-Object -ExpandProperty '#text') {
+                                        '{0} {1}' -f ($subnode.get_ChildNodes() | Where-Object { $_.Name -eq 'Command' } | Select-Object -ExpandProperty '#text'),
+                                        ($subnode.get_ChildNodes() | Where-Object { $_.Name -eq 'Arguments' } | Select-Object -ExpandProperty '#text');
                                     } else {
-                                        $subnode.get_ChildNodes() | Where-Object Name -eq 'Command' | Select-Object -ExpandProperty '#text' ; 
+                                        $subnode.get_ChildNodes() | Where-Object { $_.Name -eq 'Command' } | Select-Object -ExpandProperty '#text' ;
                                     }
                                     break;
                                 }
                                 ComHandler {
                                     # $subnode = ($node.get_ChildNodes() | Where-Object { $_.Name -eq 'ComHandler'})
-                                    if ($subnode.get_ChildNodes()| Where-Object Name -eq 'Data' | Select-Object -ExpandProperty InnerText) {
-                                        '{0} {1}'-f ($subnode.get_ChildNodes() | Where-Object Name -eq 'ClassId' | Select-Object -ExpandProperty '#text'),
-                                        ($subnode.get_ChildNodes() | Where-Object Name -eq 'Data' | Select-Object -ExpandProperty InnerText); 
+                                    if ($subnode.get_ChildNodes()| Where-Object { $_.Name -eq 'Data'} | Select-Object -ExpandProperty InnerText) {
+                                        '{0} {1}'-f ($subnode.get_ChildNodes() | Where-Object { $_.Name -eq 'ClassId'} | Select-Object -ExpandProperty '#text'),
+                                        ($subnode.get_ChildNodes() | Where-Object { $_.Name -eq 'Data'} | Select-Object -ExpandProperty InnerText);
                                     } else {
-                                        $subnode.get_ChildNodes() | Where-Object Name -eq 'ClassId' | Select-Object -ExpandProperty '#text'; 
+                                        $subnode.get_ChildNodes() | Where-Object { $_.Name -eq 'ClassId'} | Select-Object -ExpandProperty '#text';
                                     }
                                     break;
                                 }
@@ -1530,21 +1527,21 @@ Begin {
                             Item = $_
                             Value = (Get-ItemProperty -Path (Join-Path -Path 'HKLM:\SOFTWARE\Classes\CLSID' -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
                             Category = 'Winlogon'
-                        }			
+                        }
 		            }
-	            }  
+	            }
                 <# # deprecated
 	            'System','SaveDumpStart' | ForEach-Object {
-		            Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name $_ @Category	
+		            Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name $_ @Category
 	            }
                 #>
-    
+
                 # Notify doesn't exist on Windows 8.1
                 <# # deprecated
                 if (Test-Path -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify' -PathType Container) {
 	                $key = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify'
                     (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
-		                Get-RegValue -Path "$key\$($_)" -Name 'DLLName' @Category	
+		                Get-RegValue -Path "$key\$($_)" -Name 'DLLName' @Category
 	                }
                 }
                 #>
@@ -1575,8 +1572,8 @@ Begin {
                 }
                 #>
                 # Permanent events
-                Get-CimInstance -Namespace root\Subscription -ClassName __EventConsumer -ErrorAction SilentlyContinue -Verbose:$false | 
-                Where-Object { $_.PSBase.CimClass.CimClassName -eq 'ActiveScriptEventConsumer' } | 
+                Get-CimInstance -Namespace root\Subscription -ClassName __EventConsumer -ErrorAction SilentlyContinue -Verbose:$false |
+                Where-Object { $_.PSBase.CimClass.CimClassName -eq 'ActiveScriptEventConsumer' } |
                 ForEach-Object {
                     if ($_.ScriptFileName) {
                         [pscustomobject]@{
@@ -1585,7 +1582,7 @@ Begin {
                             Value =  $_.ScriptFileName ;
                             Category = 'WMI' ;
                         }
-                    
+
                     } elseif ($_.ScriptText) {
                         [pscustomobject]@{
                             Path = "\\.\$($_.PSBase.CimSystemProperties.Namespace -replace '/','\'):ActiveScriptEventConsumer.Name='$($_.Name)'" ;
@@ -1593,11 +1590,11 @@ Begin {
                             Value =  $null ;
                             Category = 'WMI' ;
                         }
-                    } 
+                    }
                 }
 
-                Get-CimInstance -Namespace root\Subscription -ClassName __EventConsumer -ErrorAction SilentlyContinue -Verbose:$false | 
-                Where-Object { $_.PSBase.CimClass.CimClassName -eq 'CommandLineEventConsumer' } | 
+                Get-CimInstance -Namespace root\Subscription -ClassName __EventConsumer -ErrorAction SilentlyContinue -Verbose:$false |
+                Where-Object { $_.PSBase.CimClass.CimClassName -eq 'CommandLineEventConsumer' } |
                 ForEach-Object {
                     [pscustomobject]@{
                         Path = "\\.\$($_.PSBase.CimSystemProperties.Namespace -replace '/','\'):CommandLineEventConsumer.Name='$($_.Name)'" ;
@@ -1634,9 +1631,9 @@ Begin {
                     }
                 }
 
-                Get-WmiNamespace | 
+                Get-WmiNamespace |
                 ForEach-Object {
-                    Get-WmiProvider -Namespace $_ | 
+                    Get-WmiProvider -Namespace $_ |
                     ForEach-Object {
                         Write-Verbose -Message "Found provider clsid $($_.CLSID) from under the $($_.PSBase.CimSystemProperties.Namespace) namespace"
                         if (($clsid = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Classes\CLSID\$($_.CLSID)\InprocServer32" -Name '(default)' -ErrorAction SilentlyContinue).'(default)')) {
@@ -1671,12 +1668,12 @@ Begin {
                         $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
                             Switch -Regex ($Item.Value ) {
                                 #GUID
-                                '^(\{)?[A-Za-z0-9]{4}([A-Za-z0-9]{4}\-?){4}[A-Za-z0-9]{12}(\})?' { 
+                                '^(\{)?[A-Za-z0-9]{4}([A-Za-z0-9]{4}\-?){4}[A-Za-z0-9]{12}(\})?' {
                                     # $clsid = ($_ -split '\s')[0]
                                     $clsid = ([system.guid]::Parse( ($_ -split '\s')[0])).ToString('B')
                                     if (Test-Path (Join-Path -Path 'HKLM:\SOFTWARE\Classes\CLSID' -ChildPath "$($clsid)\InprocServer32") -PathType Container) {
                                         Write-Verbose -Message 'Reading from InprocServer32'
-                                        (Get-ItemProperty -Path (Join-Path -Path 'HKLM:\SOFTWARE\Classes\CLSID' -ChildPath "$($clsid)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)' 
+                                        (Get-ItemProperty -Path (Join-Path -Path 'HKLM:\SOFTWARE\Classes\CLSID' -ChildPath "$($clsid)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
                                     } elseif (Test-Path (Join-Path -Path 'HKLM:\SOFTWARE\Classes\CLSID' -ChildPath "$($clsid)\LocalServer32") -PathType Container) {
                                         Write-Verbose -Message 'Reading from LocalServer32'
                                         (Get-ItemProperty -Path (Join-Path -Path 'HKLM:\SOFTWARE\Classes\CLSID' -ChildPath "$($clsid)\LocalServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
@@ -1694,7 +1691,7 @@ Begin {
                                 # Rundll32
                                 '^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?rundll32\.exe\s(/[a-z]\s)?.*,.*' {
                                     Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
-                                        @([regex]'^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?rundll32\.exe\s(/[a-z]\s)?(%windir%\\(s|S)ystem32\\)?(?<File>.*),').Matches($_) | 
+                                        @([regex]'^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?rundll32\.exe\s(/[a-z]\s)?(%windir%\\(s|S)ystem32\\)?(?<File>.*),').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
@@ -1703,12 +1700,12 @@ Begin {
                                 '[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}' {
                                     switch -regex ($_) {
                                         '\s-[fF]' {
-                                            @([regex]'(-[fF][iI]?[lL]?[eE]?)\s{1,}?"?(?<File>.+\.[pP][sS]1)"?\s?').Matches($_) | 
+                                            @([regex]'(-[fF][iI]?[lL]?[eE]?)\s{1,}?"?(?<File>.+\.[pP][sS]1)"?\s?').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value | ForEach-Object  { ($_ -replace '"','').Trim()}
                                             break
                                         }
                                         '.[pP][sS]1' {
-                                            @([regex]'\s{1,}"?(?<File>.+\.[pP][sS]1)"?\s?').Matches($_) | 
+                                            @([regex]'\s{1,}"?(?<File>.+\.[pP][sS]1)"?\s?').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                             break
                                         }
@@ -1721,7 +1718,7 @@ Begin {
                                 # Windir\system32
                                 '^(%(w|W)in(d|D)ir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\.*\.(exe|vbs)' {
                                     Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
-                                        @([regex]'^(%(w|W)in(d|D)ir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\(?<File>.*\.(exe|vbs))(\s)?').Matches($_) | 
+                                        @([regex]'^(%(w|W)in(d|D)ir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\(?<File>.*\.(exe|vbs))(\s)?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
@@ -1729,7 +1726,7 @@ Begin {
                                 # windir\somethingelse
                                 '^(%windir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\.*\\.*\.(exe|vbs)' {
                                     Join-Path -Path "$($env:systemroot)" -ChildPath (
-                                        @([regex]'^(%windir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(?<File>.*\\.*\.(exe|vbs))(\s)?').Matches($_) | 
+                                        @([regex]'^(%windir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(?<File>.*\\.*\.(exe|vbs))(\s)?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
@@ -1737,7 +1734,7 @@ Begin {
                                 # localappdata variable
                                 '^%localappdata%' {
                                     Join-Path -Path "$($env:localappdata)" -ChildPath (
-                                        @([regex]'^%localappdata%\\(?<File>.*)').Matches($_) | 
+                                        @([regex]'^%localappdata%\\(?<File>.*)').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
@@ -1746,7 +1743,7 @@ Begin {
                                 '^%SystemRoot%\\ehome\\.*\s' {
                                     # "$($env:systemroot)\ehome\ehrec.exe"
                                     Join-Path -Path "$($env:systemroot)\ehome" -ChildPath "$(
-                                        @([regex]'^%SystemRoot%\\ehome\\(?<FileName>.*)\s').Matches($_) | 
+                                        @([regex]'^%SystemRoot%\\ehome\\(?<FileName>.*)\s').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     ).exe"
                                     break
@@ -1763,28 +1760,28 @@ Begin {
                                 # ProgramData
                                 '^"?C:\\ProgramData\\' {
                                     Join-Path -Path "$($env:ProgramData)" -ChildPath (
-                                        @([regex]'^"?C:\\ProgramData\\(?<File>.*\.exe)("|\s)?').Matches($_) | 
+                                        @([regex]'^"?C:\\ProgramData\\(?<File>.*\.exe)("|\s)?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
-                                    )                                        
+                                    )
                                     break
                                 }
                                 # ProgramFiles
                                 '^"?(C:\\Program\sFiles|%ProgramFiles%)\\' {
                                     Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
-                                        @([regex]'^"?(C:\\Program\sFiles|%ProgramFiles%)\\(?<File>.*\.[a-z0-9]{1,})("|\s)?').Matches($_) | 
+                                        @([regex]'^"?(C:\\Program\sFiles|%ProgramFiles%)\\(?<File>.*\.[a-z0-9]{1,})("|\s)?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
-                                    )                                        
+                                    )
                                     break
                                 }
                                 # ProgramFilesx86
                                 '^"?(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\' {
                                     Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
-                                        @([regex]'^"?(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\(?<File>.*\.[a-z0-9]{1,})("|\s)?').Matches($_) | 
+                                        @([regex]'^"?(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\(?<File>.*\.[a-z0-9]{1,})("|\s)?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
                                 }
-                                # C:\users? 
+                                # C:\users?
                                 '^[A-Za-z]:\\' {
                                     $_
                                     break;
@@ -1895,16 +1892,16 @@ Begin {
                                 }
                                 '^("|\\\?\?\\)?[A-Za-z]:\\[Pp]rogram\s[fF]iles\\(?<FilePath>.*\.[A-Za-z]{3})\s?' {
                                     Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
-                                        @([regex]'^("|\\\?\?\\)?[A-Za-z]:\\[Pp]rogram\s[fF]iles\\(?<FilePath>.*\.[A-Za-z]{3})\s?').Matches($_) | 
+                                        @([regex]'^("|\\\?\?\\)?[A-Za-z]:\\[Pp]rogram\s[fF]iles\\(?<FilePath>.*\.[A-Za-z]{3})\s?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
-                                    )                                        
+                                    )
                                     break
                                 }
                                 '^("|\\\?\?\\)?[A-Za-z]:\\[Pp]rogram\s[fF]iles(\s\(x86\))\\(?<FilePath>.*\.[A-Za-z]{3})\s?' {
                                     Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
-                                        @([regex]'^("|\\\?\?\\)?[A-Za-z]:\\[Pp]rogram\s[fF]iles(\s\(x86\))\\(?<FilePath>.*\.[A-Za-z]{3})\s?').Matches($_) | 
+                                        @([regex]'^("|\\\?\?\\)?[A-Za-z]:\\[Pp]rogram\s[fF]iles(\s\(x86\))\\(?<FilePath>.*\.[A-Za-z]{3})\s?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
-                                    )                                        
+                                    )
                                     break
                                 }
                                 '^(\\\?\?\\)?C:\\ProgramData' {
@@ -1916,8 +1913,8 @@ Begin {
                                     break;
                                 }
                                 'SysmonDrv.sys' {
-                                    $env:PATH -split ';'| ForEach-Object { 
-                                        Get-ChildItem -Path $_\*.sys -Include SysmonDrv.sys -Force -EA 0 
+                                    $env:PATH -split ';'| ForEach-Object {
+                                        Get-ChildItem -Path $_\*.sys -Include SysmonDrv.sys -Force -ErrorAction SilentlyContinue
                                     } | Select-Object -First 1 -ExpandProperty FullName
                                     break
                                 }
@@ -1952,10 +1949,10 @@ Begin {
                         if ($Item.Value -eq '"%1" %*') {
                             $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $null -Force -PassThru
                         } else {
-                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(    
+                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
                                 Switch -Regex ($Item.Value) {
                                 '^"?(?<FileName>.*\.[A-Za-z0-9]{3})"?\s?%?' {
-                                    @([regex]'^"?(?<FileName>.*\.[A-Za-z0-9]{3})"?\s?%?').Matches($_) | 
+                                    @([regex]'^"?(?<FileName>.*\.[A-Za-z0-9]{3})"?\s?%?').Matches($_) |
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     break
                                 }
@@ -1995,12 +1992,12 @@ Begin {
                     }
                     Logon {
                         If ($Item.Item -eq 'UserInit') {
-                            $Item.Value -split ',' | 
+                            $Item.Value -split ',' |
                             ForEach-Object {
                                 $s = $_
                                 if ($_ -ne [string]::Empty) {
                                     $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
-                                        
+
                                         if ($s -match '^"?[A-Z]:\\') {
                                             if ($Item.Path -match 'Wow6432Node') {
                                                 $s -replace 'system32','syswow64' | Get-NormalizedFileSystemPath
@@ -2014,7 +2011,7 @@ Begin {
                                                 Join-Path -Path "$($env:systemroot)\system32" -ChildPath $s
                                             }
                                         }
-                                        
+
                                     ) -Force -PassThru
                                 }
                             }
@@ -2098,15 +2095,15 @@ Begin {
                                     # ProgramFiles
                                     '^[A-Za-z]:\\Program\sFiles\\' {
                                         Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
-                                            @([regex]'[A-Za-z]:\\Program\sFiles\\(?<File>.*\.exe)\s?').Matches($_) | 
+                                            @([regex]'[A-Za-z]:\\Program\sFiles\\(?<File>.*\.exe)\s?').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
-                                        )                                        
+                                        )
                                         break
                                     }
                                     # ProgramFilesx86
                                     '^[A-Za-z]:\\Program\sFiles\s\(x86\)\\' {
                                         Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
-                                            @([regex]'[A-Za-z]:\\Program\sFiles\s\(x86\)\\(?<File>.*\.exe)\s?').Matches($_) | 
+                                            @([regex]'[A-Za-z]:\\Program\sFiles\s\(x86\)\\(?<File>.*\.exe)\s?').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                         )
                                         break
@@ -2121,7 +2118,7 @@ Begin {
                                         [string]::Empty
                                         # $_
                                     }
-                                } 
+                                }
                             ) -Force -PassThru
                         }
                         break
@@ -2147,7 +2144,7 @@ Begin {
                             $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
                                 Switch -Regex ($Item.Value ) {
                                     #GUID
-                                    '^(\{)?[A-Za-z0-9]{4}([A-Za-z0-9]{4}\-?){4}[A-Za-z0-9]{12}(\})?' { 
+                                    '^(\{)?[A-Za-z0-9]{4}([A-Za-z0-9]{4}\-?){4}[A-Za-z0-9]{12}(\})?' {
                                         ([system.guid]::Parse( ($_ -split '\s')[0])).ToString('B')
                                         break
                                     }
@@ -2166,38 +2163,38 @@ Begin {
                         break
                     }
                     Services {
-                        $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(    
+                        $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
                             switch -Regex ($Item.Value) {
                             '^"?[A-Za-z]:\\[Ww][iI][nN][dD][oO][Ww][sS]\\' {
                                 Join-Path -Path "$($env:systemroot)" -ChildPath (
-                                    @([regex]'^"?[A-Za-z]:\\[Ww][iI][nN][dD][oO][Ww][sS]\\(?<FilePath>.*\.(exe|dll))\s?').Matches($_) | 
+                                    @([regex]'^"?[A-Za-z]:\\[Ww][iI][nN][dD][oO][Ww][sS]\\(?<FilePath>.*\.(exe|dll))\s?').Matches($_) |
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
-                                )  
+                                )
                                 break
                             }
                             '^"?[A-Za-z]:\\[Pp]rogram\s[fF]iles\\(?<FileName>.*\.[eE][xX][eE])\s?' {
                                 Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
-                                    @([regex]'^"?[A-Za-z]:\\[Pp]rogram\s[fF]iles\\(?<FileName>.*\.[eE][xX][eE])\s?').Matches($_) | 
+                                    @([regex]'^"?[A-Za-z]:\\[Pp]rogram\s[fF]iles\\(?<FileName>.*\.[eE][xX][eE])\s?').Matches($_) |
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
-                                )  
+                                )
                                 break
                             }
                             '^"?[A-Za-z]:\\[Pp]rogram\s[fF]iles\s\(x86\)\\(?<FileName>.*\.[eE][xX][eE])\s?' {
                                 Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
-                                    @([regex]'^"?[A-Za-z]:\\[Pp]rogram\s[fF]iles\s\(x86\)\\(?<FileName>.*\.[eE][xX][eE])\s?').Matches($_) | 
+                                    @([regex]'^"?[A-Za-z]:\\[Pp]rogram\s[fF]iles\s\(x86\)\\(?<FileName>.*\.[eE][xX][eE])\s?').Matches($_) |
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
-                                )  
+                                )
                                 break
                             }
                             '^"?[A-Za-z]:\\[Pp]rogram[dD]ata\\(?<FileName>.*\.[eE][xX][eE])\s?' {
                                 Join-Path -Path "$($env:ProgramData)" -ChildPath (
-                                    @([regex]'^"?[A-Za-z]:\\[Pp]rogram[dD]ata\\(?<FileName>.*\.[eE][xX][eE])\s?').Matches($_) | 
+                                    @([regex]'^"?[A-Za-z]:\\[Pp]rogram[dD]ata\\(?<FileName>.*\.[eE][xX][eE])\s?').Matches($_) |
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
-                                )  
+                                )
                                 break
                             }
                             '^"?(?<FilePath>[A-Za-z]:\\.*\.[eE][xX][eE])\s?' {
-                                @([regex]'^"?(?<FilePath>[A-Za-z]:\\.*\.[eE][xX][eE])\s?').Matches($_) | 
+                                @([regex]'^"?(?<FilePath>[A-Za-z]:\\.*\.[eE][xX][eE])\s?').Matches($_) |
                                 Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                 break
                             }
@@ -2250,7 +2247,7 @@ Begin {
                     WMI {
                         if ($Item.Value) {
                             $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $($Item.Value -replace '"','') -Force -PassThru
-                            
+
                         } else {
                             $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $null -Force -PassThru
                         }
@@ -2354,7 +2351,7 @@ Begin {
                 If ($VerifyDigitalSignature) {
                     if ($_.ImagePath) {
                         If (Test-Path -Path $_.ImagePath -PathType Leaf) {
-                            
+
                             ## Add the signature status to the entry
                             $signature = Get-AuthenticodeSignature -FilePath $_.ImagePath -ErrorAction Stop
                             $signed = switch ($signature.Status) {
@@ -2371,7 +2368,7 @@ Begin {
                                 }
                             }
                             $_ = $_ | Add-Member -MemberType NoteProperty -Name Signed -Value $signed -Force -PassThru
-                            
+
                             ## Add a note whether this is an OS binary to allow for easy filtering:
                             ## Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
                             if($signature.IsOSBinary)
@@ -2413,8 +2410,8 @@ Process {
     } else {
         $GetSig = $false
     }
-    Get-PSRawAutoRun @PSBoundParameters | 
-    Get-PSPrettyAutorun | 
+    Get-PSRawAutoRun @PSBoundParameters |
+    Get-PSPrettyAutorun |
     Add-PSAutoRunExtendedInfo |
     Add-PSAutoRunHash -ShowFileHash:$GetHash |
     Add-PSAutoRunAuthentiCodeSignature -VerifyDigitalSignature:$GetSig
@@ -2424,7 +2421,7 @@ End {}
 
 <#
 Get-PSAutorun -BootExecute -AppinitDLLs
-Get-PSAutorun -All | Format-Table -Property Path,ImagePath,Category 
+Get-PSAutorun -All | Format-Table -Property Path,ImagePath,Category
 Get-PSAutorun -Logon -LSAsecurityProviders | Format-Table -Property Path,ImagePath,Category
 Get-PSAutorun -All -ShowFileHash -VerifyDigitalSignature
 Get-PSAutorun -ServicesAndDrivers | ? path -match 'OSE' | fl *
