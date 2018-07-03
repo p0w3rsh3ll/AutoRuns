@@ -2095,7 +2095,7 @@ Begin {
                                     # ProgramFiles
                                     '^[A-Za-z]:\\Program\sFiles\\' {
                                         Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
-                                            @([regex]'[A-Za-z]:\\Program\sFiles\\(?<File>.*\.exe)\s?').Matches($_) |
+                                            @([regex]'[A-Za-z]:\\Program\sFiles\\(?<File>.*\.(e|E)(x|X)(e|E))\s?').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                         )
                                         break
@@ -2103,7 +2103,7 @@ Begin {
                                     # ProgramFilesx86
                                     '^[A-Za-z]:\\Program\sFiles\s\(x86\)\\' {
                                         Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
-                                            @([regex]'[A-Za-z]:\\Program\sFiles\s\(x86\)\\(?<File>.*\.exe)\s?').Matches($_) |
+                                            @([regex]'[A-Za-z]:\\Program\sFiles\s\(x86\)\\(?<File>.*\.(e|E)(x|X)(e|E))\s?').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                         )
                                         break
