@@ -28,7 +28,7 @@ Find-Module -Name Autoruns -Repository PSGallery
 ```
 Version    Name                                Repository           Description
 -------    ----                                ----------           -----------                                   
-13.82.1    AutoRuns                            PSGallery            AutoRuns is a module ...
+13.90      AutoRuns                            PSGallery            AutoRuns is a module ...
 ```
 
 ```powershell
@@ -41,8 +41,8 @@ Stop and please review the content of the module, I mean the code to make sure i
 You can also verify that the SHA256 hashes of downloaded files match those stored in the catalog file
 ```powershell
 $HT = @{
-    CatalogFilePath = "~/Downloads/AutoRuns/13.82.1/AutoRuns.cat"
-    Path = "~/Downloads/AutoRuns/13.82.1"
+    CatalogFilePath = "~/Downloads/AutoRuns/13.90/AutoRuns.cat"
+    Path = "~/Downloads/AutoRuns/13.90"
     Detailed = $true
     FilesToSkip = 'PSGetModuleInfo.xml'
 }
@@ -51,7 +51,7 @@ Test-FileCatalog @HT
 
 ```powershell
 # Import the module
-Import-Module ~/Downloads/AutoRuns/13.82.1/AutoRuns.psd1 -Force -Verbose
+Import-Module ~/Downloads/AutoRuns/13.90/AutoRuns.psd1 -Force -Verbose
 ```
 
 <a name="Functions"/>
@@ -63,7 +63,7 @@ Get-Command -Module AutoRuns
 ```
 CommandType     Name                                               Version    Source
 -----------     ----                                               -------    ------
-Function        Get-PSAutorun                                      13.82.1    AutoRuns
+Function        Get-PSAutorun                                      13.90      AutoRuns
 ```
 
 
@@ -169,6 +169,9 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 <a name="AutorunsHistory"/>
 
 ## Original [Autoruns.exe](https://technet.microsoft.com/en-us/sysinternals/bb963902.aspx) from Mark Russinovich
+
+[Autoruns v13.90](https://blogs.technet.microsoft.com/sysinternals/2018/07/05/sysmon-v8-0-autoruns-v13-90/)
+>Autoruns, a comprehensive Windows autostart entry point (ASEP) manager, now includes Runonce\*\Depend keys and GPO logon and logoff locations, as well as fixes a bug in WMI path parsing.
 
 [Autoruns v13.82](https://blogs.technet.microsoft.com/sysinternals/2018/02/17/process-monitor-v3-50-autoruns-v13-82-du-v1-61-sdelete-v2-01/)
 >This Autoruns release shows Onenote addins and fixes several bugs.

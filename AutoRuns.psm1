@@ -21,9 +21,6 @@ Function Get-PSAutorun {
     .PARAMETER ExplorerAddons
         Switch to gather artifacts from the Explorer category.
 
-    .PARAMETER SidebarGadgets
-        Switch to gather artifacts from the Sidebar Gadgets category.
-
     .PARAMETER ImageHijacks
         Switch to gather artifacts from the Image Hijacks category.
 
@@ -86,7 +83,6 @@ Function Get-PSAutorun {
         [Switch]$BootExecute,
         [Switch]$AppinitDLLs,
         [Switch]$ExplorerAddons,
-        [Switch]$SidebarGadgets,
         [Switch]$ImageHijacks,
         [Switch]$InternetExplorerAddons,
         [Switch]$KnownDLLs,
@@ -441,7 +437,6 @@ Begin {
             [Switch]$BootExecute,
             [Switch]$AppinitDLLs,
             [Switch]$ExplorerAddons,
-            [Switch]$SidebarGadgets,
             [Switch]$ImageHijacks,
             [Switch]$InternetExplorerAddons,
             [Switch]$KnownDLLs,
@@ -756,27 +751,6 @@ Begin {
                 }
                 #endregion User Explorer
             }
-            if ($All -or $SidebarGadgets) {
-                Write-Verbose -Message 'Looking for Sidebar gadgets'
-                #region User Sidebar gadgets
-
-                if (Test-Path (Join-Path -Path (Split-Path -Path $($env:AppData) -Parent) -ChildPath 'Local\Microsoft\Windows Sidebar\Settings.ini')) {
-
-                    Get-Content -Path (
-                        Join-Path -Path (Split-Path -Path $($env:AppData) -Parent) -ChildPath 'Local\Microsoft\Windows Sidebar\Settings.ini'
-                    ) |
-                    Select-String -Pattern '^PrivateSetting_GadgetName=' | ForEach-Object {
-
-                            [pscustomobject]@{
-                                Path = Join-Path -Path (Split-Path -Path $($env:AppData) -Parent) -ChildPath 'Local\Microsoft\Windows Sidebar\Settings.ini'
-                                Item = [string]::Empty
-                                Value = ($_.Line -split '=' | Select-Object -Last 1) -replace '%5C','\' -replace '%20',' '
-                                Category = 'SideBar Gadgets'
-                            }
-                     }
-                }
-                #endregion User Sidebar gadgets
-            }
             if ($All -or $ImageHijacks) {
                 Write-Verbose -Message 'Looking for Image hijacks'
                 #region Image Hijacks
@@ -975,7 +949,7 @@ Begin {
                 $Category = @{ Category = 'Logon'}
 
                 # Winlogon
-                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name 'VmApplet','Userinit','Shell','TaskMan' @Category
+                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name 'VmApplet','Userinit','Shell','TaskMan','AppSetup' @Category
 
                 # UserInitMprLogonScript
                 if (Test-Path -Path 'HKLM:\Environment' -PathType Container) {
@@ -1010,7 +984,7 @@ Begin {
                 }
 
                 # Local GPO scripts
-                'Startup','Shutdown' | ForEach-Object -Process {
+                'Startup','Shutdown','Logon','Logoff' | ForEach-Object -Process {
                     $key = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\$($_)"
                     if (Test-Path -Path $key) {
                         (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
@@ -1032,9 +1006,15 @@ Begin {
                 Get-RegValue -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\AlternateShells' -Name 'AvailableShells' @Category
 
                 # Terminal server
-                # Removed from 13.82 but key/value still exist
+                # Removed from 13.82 but key/value still exist > restored as of 13.90
                 Get-RegValue -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\Wds\rdpwd' -Name 'StartupPrograms' @Category
-                # Removed from 13.82 but key/value still exist
+
+                # Restored as of 13.90
+                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Runonce' -Name '*' @Category
+                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx' -Name '*' @Category
+                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run' -Name '*' @Category
+
+                # Removed from 13.82 but key/value still exist > restored in 13.90
                 Get-RegValue -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp'  -Name 'InitialProgram' @Category
 
                 # Run
@@ -1073,7 +1053,15 @@ Begin {
                                 break
 
                             }
-                            default {}
+                            # Anything else: not lnk and not PE
+                            default {
+                                [pscustomobject]@{
+                                    Path = "$($env:systemdrive)\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup"
+                                    Item = $File.Name
+                                    Value = $File.FullName
+                                    Category = 'Logon'
+                                }
+                            }
                         }
                     }
                 }
@@ -1100,7 +1088,7 @@ Begin {
                 #region User Logon
 
                 # Local GPO scripts
-                'Logon','Logoff' | ForEach-Object -Process {
+                'Startup','Shutdown','Logon','Logoff' | ForEach-Object -Process {
                     $key = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\$($_)"
                     if (Test-Path -Path $key) {
                         (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
@@ -1149,7 +1137,15 @@ Begin {
                                 break
 
                             }
-                            default {}
+                            # Anything else: not lnk and not PE
+                            default {
+                                [pscustomobject]@{
+                                    Path = "$($env:AppData)\Microsoft\Windows\Start Menu\Programs\Startup"
+                                    Item = $File.Name
+                                    Value = $File.FullName
+                                    Category = 'Logon'
+                                }
+                            }
                         }
                     }
                 }
@@ -1174,6 +1170,11 @@ Begin {
                 $null,'Wow6432Node' | ForEach-Object {
                     Get-RegValue -Path "HKCU:\Software\$($_)\Microsoft\Windows\CurrentVersion\RunOnceEx" -Name '*' @Category
                 }
+
+                # Restored as of 13.90
+                Get-RegValue -Path 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Runonce' -Name '*' @Category
+                Get-RegValue -Path 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx' -Name '*' @Category
+                Get-RegValue -Path 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run' -Name '*' @Category
 
                 #endregion User Logon
 
@@ -2095,7 +2096,7 @@ Begin {
                                     # ProgramFiles
                                     '^[A-Za-z]:\\Program\sFiles\\' {
                                         Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
-                                            @([regex]'[A-Za-z]:\\Program\sFiles\\(?<File>.*\.exe)\s?').Matches($_) |
+                                            @([regex]'[A-Za-z]:\\Program\sFiles\\(?<File>.*\.(e|E)(x|X)(e|E))\s?').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                         )
                                         break
@@ -2103,7 +2104,7 @@ Begin {
                                     # ProgramFilesx86
                                     '^[A-Za-z]:\\Program\sFiles\s\(x86\)\\' {
                                         Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
-                                            @([regex]'[A-Za-z]:\\Program\sFiles\s\(x86\)\\(?<File>.*\.exe)\s?').Matches($_) |
+                                            @([regex]'[A-Za-z]:\\Program\sFiles\s\(x86\)\\(?<File>.*\.(e|E)(x|X)(e|E))\s?').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                         )
                                         break
@@ -2478,4 +2479,17 @@ Get-PSAutorun -WMI -VerifyDigitalSignature | Where { -not $_.isOSBinary }
     -HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx
     -HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run
     -HKLM\System\CurrentControlSet\Control\ServiceControlManagerExtension
+# From 13.82 to 13.90
+    -AppData\Local\Microsoft\Windows Sidebar\Settings.ini
+    +HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\AppSetup
+    +HKCU\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Startup
+    +HKCU\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Shutdown
+    +HKLM\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Logon
+    +HKLM\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Logoff
+    +HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Runonce
+    +HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx
+    +HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run
+    +HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Runonce
+    +HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx
+    +HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run
 #>
