@@ -1140,7 +1140,7 @@ Begin {
                             # Anything else: not lnk and not PE
                             default {
                                 [pscustomobject]@{
-                                    Path = "$($env:systemdrive)\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup"
+                                    Path = "$($env:AppData)\Microsoft\Windows\Start Menu\Programs\Startup"
                                     Item = $File.Name
                                     Value = $File.FullName
                                     Category = 'Logon'
