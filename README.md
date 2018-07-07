@@ -168,7 +168,7 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 
 <a name="AutorunsHistory"/>
 
-## Original [Autoruns.exe](https://technet.microsoft.com/en-us/sysinternals/bb963902.aspx) from Mark Russinovich
+## Original [Autoruns.exe](https://docs.microsoft.com/en-us/sysinternals/downloads/autoruns) from Mark Russinovich
 
 [Autoruns v13.90](https://blogs.technet.microsoft.com/sysinternals/2018/07/05/sysmon-v8-0-autoruns-v13-90/)
 >Autoruns, a comprehensive Windows autostart entry point (ASEP) manager, now includes Runonce\*\Depend keys and GPO logon and logoff locations, as well as fixes a bug in WMI path parsing.
