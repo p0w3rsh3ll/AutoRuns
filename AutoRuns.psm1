@@ -1012,6 +1012,17 @@ Begin {
                 # Restored as of 13.90
                 Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Runonce' -Name '*' @Category
                 Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx' -Name '*' @Category
+                $key = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx'
+                if (Test-Path -Path $key -PathType Container) {
+                    (Get-Item -Path $key).GetSubKeyNames() |
+                    ForEach-Object -Process {
+                        Get-RegValue -Path "$key\$($_)" -Name '*' @Category
+                        if (Test-Path -Path "$key\$($_)\Depend" -PathType Container) {
+                            Get-RegValue -Path "$key\$($_)\Depend" -Name '*' @Category
+                        }
+                    }
+                }
+
                 Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run' -Name '*' @Category
 
                 # Removed from 13.82 but key/value still exist > restored in 13.90
@@ -1025,6 +1036,19 @@ Begin {
 
                 # RunOnceEx
                 $null,'Wow6432Node' | Foreach-Object { Get-RegValue -Path "HKLM:\SOFTWARE\$($_)\Microsoft\Windows\CurrentVersion\RunOnceEx" -Name '*' @Category }
+
+                $null,'Wow6432Node' | Foreach-Object {
+                    $key = "HKLM:\SOFTWARE\$($_)\Microsoft\Windows\CurrentVersion\RunOnceEx"
+                    if (Test-Path -Path $key -PathType Container) {
+                        (Get-Item -Path $key).GetSubKeyNames() |
+                        ForEach-Object -Process {
+                            Get-RegValue -Path "$key\$($_)" -Name '*' @Category
+                                if (Test-Path -Path "$key\$($_)\Depend" -PathType Container) {
+                                    Get-RegValue -Path "$key\$($_)\Depend" -Name '*' @Category
+                                }
+                        }
+                    }
+                }
 
                 # LNK files or direct executable
                 if (Test-Path -Path "$($env:systemdrive)\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup" -PathType Container) {
@@ -1170,10 +1194,32 @@ Begin {
                 $null,'Wow6432Node' | ForEach-Object {
                     Get-RegValue -Path "HKCU:\Software\$($_)\Microsoft\Windows\CurrentVersion\RunOnceEx" -Name '*' @Category
                 }
+                $null,'Wow6432Node' | Foreach-Object {
+                    $key = "HKCU:\SOFTWARE\$($_)\Microsoft\Windows\CurrentVersion\RunOnceEx"
+                    if (Test-Path -Path $key -PathType Container) {
+                        (Get-Item -Path $key).GetSubKeyNames() |
+                        ForEach-Object -Process {
+                            Get-RegValue -Path "$key\$($_)" -Name '*' @Category
+                            if (Test-Path -Path "$key\$($_)\Depend" -PathType Container) {
+                                Get-RegValue -Path "$key\$($_)\Depend" -Name '*' @Category
+                            }
+                        }
+                    }
+                }
 
                 # Restored as of 13.90
                 Get-RegValue -Path 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Runonce' -Name '*' @Category
                 Get-RegValue -Path 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx' -Name '*' @Category
+                $key = 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx'
+                if (Test-Path -Path $key -PathType Container) {
+                    (Get-Item -Path $key).GetSubKeyNames() |
+                    ForEach-Object -Process {
+                        Get-RegValue -Path "$key\$($_)" -Name '*' @Category
+                        if (Test-Path -Path "$key\$($_)\Depend" -PathType Container) {
+                            Get-RegValue -Path "$key\$($_)\Depend" -Name '*' @Category
+                        }
+                    }
+                }
                 Get-RegValue -Path 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run' -Name '*' @Category
 
                 #endregion User Logon
@@ -2013,6 +2059,14 @@ Begin {
                                             }
                                         }
 
+                                    ) -Force -PassThru
+                                }
+                            }
+                        } elseif ($Item.Path -imatch 'runonceEx' -and $Item.Value -match '|') {
+                            $Item.Value -split '\|' | ForEach-Object {
+                                if ($_ -ne [string]::Empty) {
+                                    $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
+                                        $_
                                     ) -Force -PassThru
                                 }
                             }
