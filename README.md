@@ -28,7 +28,7 @@ Find-Module -Name Autoruns -Repository PSGallery
 ```
 Version    Name                                Repository           Description
 -------    ----                                ----------           -----------                                   
-13.90      AutoRuns                            PSGallery            AutoRuns is a module ...
+13.90.1    AutoRuns                            PSGallery            AutoRuns is a module ...
 ```
 
 ```powershell
@@ -41,8 +41,8 @@ Stop and please review the content of the module, I mean the code to make sure i
 You can also verify that the SHA256 hashes of downloaded files match those stored in the catalog file
 ```powershell
 $HT = @{
-    CatalogFilePath = "~/Downloads/AutoRuns/13.90/AutoRuns.cat"
-    Path = "~/Downloads/AutoRuns/13.90"
+    CatalogFilePath = "~/Downloads/AutoRuns/13.90.1/AutoRuns.cat"
+    Path = "~/Downloads/AutoRuns/13.90.1"
     Detailed = $true
     FilesToSkip = 'PSGetModuleInfo.xml'
 }
@@ -51,7 +51,7 @@ Test-FileCatalog @HT
 
 ```powershell
 # Import the module
-Import-Module ~/Downloads/AutoRuns/13.90/AutoRuns.psd1 -Force -Verbose
+Import-Module ~/Downloads/AutoRuns/13.90.1/AutoRuns.psd1 -Force -Verbose
 ```
 
 <a name="Functions"/>
@@ -63,7 +63,7 @@ Get-Command -Module AutoRuns
 ```
 CommandType     Name                                               Version    Source
 -----------     ----                                               -------    ------
-Function        Get-PSAutorun                                      13.90      AutoRuns
+Function        Get-PSAutorun                                      13.90.1    AutoRuns
 ```
 
 
@@ -79,7 +79,7 @@ Get-Command Get-PSAutorun -Syntax
 Get-PSAutorun [-All] [-BootExecute] [-AppinitDLLs] [-ExplorerAddons] [-SidebarGadgets] [-ImageHijacks]
 [-InternetExplorerAddons] [-KnownDLLs] [-Logon] [-Winsock] [-Codecs] [-OfficeAddins] 
 [-PrintMonitorDLLs] [-LSAsecurityProviders] [-ServicesAndDrivers] [-ScheduledTasks] [-Winlogon] 
-[-WMI] [-ShowFileHash] [-VerifyDigitalSignature] [<CommonParameters>]
+[-WMI] [-ShowFileHash] [-VerifyDigitalSignature] [-User <string>] [<CommonParameters>]
 ```
 
 ### View examples provided in the help
@@ -105,6 +105,11 @@ SYNOPSIS
     -------------------------- EXAMPLE 3 --------------------------
 
     PS C:\>Get-PSAutorun -All -ShowFileHash -VerifyDigitalSignature
+
+    -------------------------- EXAMPLE 4 --------------------------
+
+    PS C:\>Get-PSAutorun -All -User * -ShowFileHash -VerifyDigitalSignature
+
 ```
 
 <a name="Issues"/>
@@ -144,7 +149,7 @@ gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessin
 - [ ] Review and improve regex used by the internal Get-PSPrettyAutorun function (ex: external paths)
 
 #### New features
-- [ ] Replace HKCU and add an option to specify what user hive is being investigated
+- [x] Replace HKCU and add an option to specify what user hive is being investigated
 - [ ] Add timestamps on registry keys
 - [ ] Analyze an offline image of Windows
 
