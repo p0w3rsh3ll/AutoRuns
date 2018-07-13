@@ -79,7 +79,7 @@ Get-Command Get-PSAutorun -Syntax
 Get-PSAutorun [-All] [-BootExecute] [-AppinitDLLs] [-ExplorerAddons] [-SidebarGadgets] [-ImageHijacks]
 [-InternetExplorerAddons] [-KnownDLLs] [-Logon] [-Winsock] [-Codecs] [-OfficeAddins] 
 [-PrintMonitorDLLs] [-LSAsecurityProviders] [-ServicesAndDrivers] [-ScheduledTasks] [-Winlogon] 
-[-WMI] [-ShowFileHash] [-VerifyDigitalSignature] [<CommonParameters>]
+[-WMI] [-ShowFileHash] [-VerifyDigitalSignature] [-User <string>] [<CommonParameters>]
 ```
 
 ### View examples provided in the help
@@ -105,6 +105,11 @@ SYNOPSIS
     -------------------------- EXAMPLE 3 --------------------------
 
     PS C:\>Get-PSAutorun -All -ShowFileHash -VerifyDigitalSignature
+
+    -------------------------- EXAMPLE 4 --------------------------
+
+    PS C:\>Get-PSAutorun -All -User * -ShowFileHash -VerifyDigitalSignature
+
 ```
 
 <a name="Issues"/>
