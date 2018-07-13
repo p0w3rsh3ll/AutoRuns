@@ -144,7 +144,7 @@ gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessin
 - [ ] Review and improve regex used by the internal Get-PSPrettyAutorun function (ex: external paths)
 
 #### New features
-- [ ] Replace HKCU and add an option to specify what user hive is being investigated
+- [x] Replace HKCU and add an option to specify what user hive is being investigated
 - [ ] Add timestamps on registry keys
 - [ ] Analyze an offline image of Windows
 
