@@ -75,6 +75,14 @@ Function Get-PSAutorun {
     .EXAMPLE
          Get-PSAutorun -All -ShowFileHash -VerifyDigitalSignature
 
+    .EXAMPLE
+         Get-PSAutorun -All -User * -ShowFileHash -VerifyDigitalSignature
+    .NOTES
+
+    DYNAMIC PARAMETER User
+        Specify what user hive to be scanned.
+        Scans by default HKCU when the parameter isn't explicitly used.
+        '*' can be used to indicate that all loaded user hives will be scanned.
 #>
 
     [CmdletBinding()]
@@ -103,6 +111,7 @@ DynamicParam  {
 
     Function Test-isValidSid {
     [CmdletBinding()]
+    [OutputType([System.Boolean])]
     Param(
     [Parameter(Mandatory,ValueFromPipeline)]
     [string]$SID
