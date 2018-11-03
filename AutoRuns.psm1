@@ -2437,8 +2437,17 @@ Begin {
                     }
                     WMI {
                         if ($Item.Value) {
-                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $($Item.Value -replace '"','') -Force -PassThru
-
+                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
+                                Switch -Regex (($Item.Value -replace '"','')) {
+                                    '^%SystemRoot%\\system32\\' {
+                                        $_ -replace '%SystemRoot%',"$($env:SystemRoot)";
+                                        break;
+                                    }
+                                    default {
+                                        $_;
+                                    }
+                                }
+                            ) -Force -PassThru
                         } else {
                             $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $null -Force -PassThru
                         }
