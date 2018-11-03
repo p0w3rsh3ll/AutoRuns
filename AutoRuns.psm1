@@ -1871,6 +1871,14 @@ Begin {
                                     )
                                     break
                                 }
+                                # cscript
+                                '^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?(c|w)script\.exe\s(//?[a-zA-Z:]+\s){0,}.*' {
+                                    Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
+                                        @([regex]'^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?(c|w)script\.exe\s(//?[a-zA-Z:]+\s){0,}((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?(?<File>.*\.[a-zA-Z0-9]{1,3})\s?').Matches($_) |
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )
+                                    break
+                                }
                                 # special powershell
                                 '[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}' {
                                     switch -regex ($_) {
