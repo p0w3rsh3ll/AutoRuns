@@ -1866,7 +1866,7 @@ Begin {
                                 # Rundll32
                                 '^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?rundll32\.exe\s(/[a-z]\s)?.*,.*' {
                                     Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
-                                        @([regex]'^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?rundll32\.exe\s(/[a-z]\s)?(%windir%\\(s|S)ystem32\\)?(?<File>.*),').Matches($_) |
+                                        @([regex]'^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?rundll32\.exe\s(/[a-z]\s)?((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?(?<File>.*),').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
