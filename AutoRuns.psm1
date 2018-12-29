@@ -2347,7 +2347,7 @@ Begin {
                     Services {
                         $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
                             switch -Regex ($Item.Value) {
-                            '^"?[A-Za-z]:\\[Ww][iI][nN][dD][oO][Ww][sS]\\' {
+                            '^"?[A-Za-z]:\\[Ww][iI][nN][dD][oO][Ww][sS]\\(?<FilePath>.*\.(exe|dll))\s?' {
                                 Join-Path -Path "$($env:systemroot)" -ChildPath (
                                     @([regex]'^"?[A-Za-z]:\\[Ww][iI][nN][dD][oO][Ww][sS]\\(?<FilePath>.*\.(exe|dll))\s?').Matches($_) |
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
