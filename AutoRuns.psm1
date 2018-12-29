@@ -2045,27 +2045,18 @@ Begin {
                     Drivers {
                         $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
                             switch -Regex ($Item.Value) {
-                                #'^\\SystemRoot\\System32\\drivers\\' {
                                 '^\\SystemRoot\\System32\\' {
                                     $_ -replace '\\Systemroot',"$($env:systemroot)"
                                     break;
                                 }
-                                <#
-                                '^System32\drivers\\' {
-                                    Join-Path -Path "$($env:systemroot)" -ChildPath $_
-                                    break;
-                                }
-                                #>
                                 '^System32\\[dD][rR][iI][vV][eE][rR][sS]\\' {
                                     Join-Path -Path "$($env:systemroot)" -ChildPath $_
                                     break;
                                 }
-                                <#
-                                '^system32\\DRIVERS\\' {
+                                '^SysWow64\\[dD][rR][iI][vV][eE][rR][sS]\\' {
                                     Join-Path -Path "$($env:systemroot)" -ChildPath $_
                                     break;
                                 }
-                                #>
                                 '^\\\?\?\\C:\\Windows\\system32\\drivers' {
                                     $_ -replace '\\\?\?\\',''
                                     break;
