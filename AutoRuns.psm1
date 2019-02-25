@@ -1866,7 +1866,15 @@ Begin {
                                 # Rundll32
                                 '^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?rundll32\.exe\s(/[a-z]\s)?.*,.*' {
                                     Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
-                                        @([regex]'^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?rundll32\.exe\s(/[a-z]\s)?(%windir%\\(s|S)ystem32\\)?(?<File>.*),').Matches($_) |
+                                        @([regex]'^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?rundll32\.exe\s(/[a-z]\s)?((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?(?<File>.*),').Matches($_) |
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )
+                                    break
+                                }
+                                # cscript
+                                '^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?(c|w)script\.exe\s(//?[a-zA-Z:]+\s){0,}.*' {
+                                    Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
+                                        @([regex]'^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?(c|w)script\.exe\s(//?[a-zA-Z:]+\s){0,}((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?(?<File>.*\.[a-zA-Z0-9]{1,3})\s?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
@@ -2037,27 +2045,18 @@ Begin {
                     Drivers {
                         $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
                             switch -Regex ($Item.Value) {
-                                #'^\\SystemRoot\\System32\\drivers\\' {
                                 '^\\SystemRoot\\System32\\' {
                                     $_ -replace '\\Systemroot',"$($env:systemroot)"
                                     break;
                                 }
-                                <#
-                                '^System32\drivers\\' {
-                                    Join-Path -Path "$($env:systemroot)" -ChildPath $_
-                                    break;
-                                }
-                                #>
                                 '^System32\\[dD][rR][iI][vV][eE][rR][sS]\\' {
                                     Join-Path -Path "$($env:systemroot)" -ChildPath $_
                                     break;
                                 }
-                                <#
-                                '^system32\\DRIVERS\\' {
+                                '^SysWow64\\[dD][rR][iI][vV][eE][rR][sS]\\' {
                                     Join-Path -Path "$($env:systemroot)" -ChildPath $_
                                     break;
                                 }
-                                #>
                                 '^\\\?\?\\C:\\Windows\\system32\\drivers' {
                                     $_ -replace '\\\?\?\\',''
                                     break;
@@ -2348,7 +2347,7 @@ Begin {
                     Services {
                         $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
                             switch -Regex ($Item.Value) {
-                            '^"?[A-Za-z]:\\[Ww][iI][nN][dD][oO][Ww][sS]\\' {
+                            '^"?[A-Za-z]:\\[Ww][iI][nN][dD][oO][Ww][sS]\\(?<FilePath>.*\.(exe|dll))\s?' {
                                 Join-Path -Path "$($env:systemroot)" -ChildPath (
                                     @([regex]'^"?[A-Za-z]:\\[Ww][iI][nN][dD][oO][Ww][sS]\\(?<FilePath>.*\.(exe|dll))\s?').Matches($_) |
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
@@ -2429,8 +2428,17 @@ Begin {
                     }
                     WMI {
                         if ($Item.Value) {
-                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $($Item.Value -replace '"','') -Force -PassThru
-
+                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
+                                Switch -Regex (($Item.Value -replace '"','')) {
+                                    '^%SystemRoot%\\system32\\' {
+                                        $_ -replace '%SystemRoot%',"$($env:SystemRoot)";
+                                        break;
+                                    }
+                                    default {
+                                        $_;
+                                    }
+                                }
+                            ) -Force -PassThru
                         } else {
                             $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $null -Force -PassThru
                         }
