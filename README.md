@@ -173,7 +173,7 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 
 <a name="AutorunsHistory"/>
 
-## Original [Autoruns.exe](https://technet.microsoft.com/en-us/sysinternals/bb963902.aspx) from Mark Russinovich
+## Original [Autoruns.exe](https://docs.microsoft.com/en-us/sysinternals/downloads/autoruns) from Mark Russinovich
 
 [Autoruns v13.94](https://blogs.technet.microsoft.com/sysinternals/2019/02/19/sysmon-v9-0-autoruns-v13-94/)
 >This Autoruns update fixes a bug that prevented the correct display of the target of image hosts such as svchost.exe, rundll32.exe, and cmd.exe.
