@@ -28,7 +28,7 @@ Find-Module -Name Autoruns -Repository PSGallery
 ```
 Version    Name                                Repository           Description
 -------    ----                                ----------           -----------                                   
-13.82.1    AutoRuns                            PSGallery            AutoRuns is a module ...
+13.94    AutoRuns                            PSGallery            AutoRuns is a module ...
 ```
 
 ```powershell
@@ -41,8 +41,8 @@ Stop and please review the content of the module, I mean the code to make sure i
 You can also verify that the SHA256 hashes of downloaded files match those stored in the catalog file
 ```powershell
 $HT = @{
-    CatalogFilePath = "~/Downloads/AutoRuns/13.82.1/AutoRuns.cat"
-    Path = "~/Downloads/AutoRuns/13.82.1"
+    CatalogFilePath = "~/Downloads/AutoRuns/13.94/AutoRuns.cat"
+    Path = "~/Downloads/AutoRuns/13.94"
     Detailed = $true
     FilesToSkip = 'PSGetModuleInfo.xml'
 }
@@ -51,7 +51,7 @@ Test-FileCatalog @HT
 
 ```powershell
 # Import the module
-Import-Module ~/Downloads/AutoRuns/13.82.1/AutoRuns.psd1 -Force -Verbose
+Import-Module ~/Downloads/AutoRuns/13.94/AutoRuns.psd1 -Force -Verbose
 ```
 
 <a name="Functions"/>
@@ -63,7 +63,7 @@ Get-Command -Module AutoRuns
 ```
 CommandType     Name                                               Version    Source
 -----------     ----                                               -------    ------
-Function        Get-PSAutorun                                      13.82.1    AutoRuns
+Function        Get-PSAutorun                                      13.94      AutoRuns
 ```
 
 
@@ -79,7 +79,7 @@ Get-Command Get-PSAutorun -Syntax
 Get-PSAutorun [-All] [-BootExecute] [-AppinitDLLs] [-ExplorerAddons] [-SidebarGadgets] [-ImageHijacks]
 [-InternetExplorerAddons] [-KnownDLLs] [-Logon] [-Winsock] [-Codecs] [-OfficeAddins] 
 [-PrintMonitorDLLs] [-LSAsecurityProviders] [-ServicesAndDrivers] [-ScheduledTasks] [-Winlogon] 
-[-WMI] [-ShowFileHash] [-VerifyDigitalSignature] [<CommonParameters>]
+[-WMI] [-ShowFileHash] [-VerifyDigitalSignature] [-User <string>] [<CommonParameters>]
 ```
 
 ### View examples provided in the help
@@ -105,6 +105,11 @@ SYNOPSIS
     -------------------------- EXAMPLE 3 --------------------------
 
     PS C:\>Get-PSAutorun -All -ShowFileHash -VerifyDigitalSignature
+
+    -------------------------- EXAMPLE 4 --------------------------
+
+    PS C:\>Get-PSAutorun -All -User * -ShowFileHash -VerifyDigitalSignature
+
 ```
 
 <a name="Issues"/>
@@ -144,7 +149,7 @@ gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessin
 - [ ] Review and improve regex used by the internal Get-PSPrettyAutorun function (ex: external paths)
 
 #### New features
-- [ ] Replace HKCU and add an option to specify what user hive is being investigated
+- [x] Replace HKCU and add an option to specify what user hive is being investigated
 - [ ] Add timestamps on registry keys
 - [ ] Analyze an offline image of Windows
 
@@ -168,7 +173,16 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 
 <a name="AutorunsHistory"/>
 
-## Original [Autoruns.exe](https://technet.microsoft.com/en-us/sysinternals/bb963902.aspx) from Mark Russinovich
+## Original [Autoruns.exe](https://docs.microsoft.com/en-us/sysinternals/downloads/autoruns) from Mark Russinovich
+
+[Autoruns v13.94](https://blogs.technet.microsoft.com/sysinternals/2019/02/19/sysmon-v9-0-autoruns-v13-94/)
+>This Autoruns update fixes a bug that prevented the correct display of the target of image hosts such as svchost.exe, rundll32.exe, and cmd.exe.
+
+[Autoruns v13.93](https://blogs.technet.microsoft.com/sysinternals/2018/12/09/autoruns-v13-93-handle-v4-21-process-explorer-v16-22-sdelete-v2-02-sigcheck-v2-71-sysmon-v8-02-and-vmmap-v3-25/)
+>This Autoruns update fixes a bug that prevented UserInitMprLogonScript from being scanned and by-default enables HCKU scanning for the console version.
+
+[Autoruns v13.90](https://blogs.technet.microsoft.com/sysinternals/2018/07/05/sysmon-v8-0-autoruns-v13-90/)
+>Autoruns, a comprehensive Windows autostart entry point (ASEP) manager, now includes Runonce\*\Depend keys and GPO logon and logoff locations, as well as fixes a bug in WMI path parsing.
 
 [Autoruns v13.82](https://blogs.technet.microsoft.com/sysinternals/2018/02/17/process-monitor-v3-50-autoruns-v13-82-du-v1-61-sdelete-v2-01/)
 >This Autoruns release shows Onenote addins and fixes several bugs.

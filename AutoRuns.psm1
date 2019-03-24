@@ -21,9 +21,6 @@ Function Get-PSAutorun {
     .PARAMETER ExplorerAddons
         Switch to gather artifacts from the Explorer category.
 
-    .PARAMETER SidebarGadgets
-        Switch to gather artifacts from the Sidebar Gadgets category.
-
     .PARAMETER ImageHijacks
         Switch to gather artifacts from the Image Hijacks category.
 
@@ -81,6 +78,14 @@ Function Get-PSAutorun {
     .EXAMPLE
          Get-PSAutorun -All -ShowFileHash -VerifyDigitalSignature
 
+    .EXAMPLE
+         Get-PSAutorun -All -User * -ShowFileHash -VerifyDigitalSignature
+    .NOTES
+
+    DYNAMIC PARAMETER User
+        Specify what user hive to be scanned.
+        Scans by default HKCU when the parameter isn't explicitly used.
+        '*' can be used to indicate that all loaded user hives will be scanned.
 #>
 
     [CmdletBinding()]
@@ -89,7 +94,6 @@ Function Get-PSAutorun {
         [Switch]$BootExecute,
         [Switch]$AppinitDLLs,
         [Switch]$ExplorerAddons,
-        [Switch]$SidebarGadgets,
         [Switch]$ImageHijacks,
         [Switch]$InternetExplorerAddons,
         [Switch]$KnownDLLs,
@@ -107,9 +111,105 @@ Function Get-PSAutorun {
         [Switch]$ShowFileHash,
         [Switch]$VerifyDigitalSignature
     )
+DynamicParam  {
 
+    Function Test-isValidSid {
+    [CmdletBinding()]
+    [OutputType([System.Boolean])]
+    Param(
+    [Parameter(Mandatory,ValueFromPipeline)]
+    [string]$SID
+    )
+    Begin {}
+    Process {
+        try {
+            $null = [System.Security.Principal.SecurityIdentifier]$SID
+            $true
+        } catch {
+            $false
+        }
+    }
+    End {}
+    }
+
+    Function Get-UserNameFromSID {
+    [CmdletBinding()]
+    Param(
+    [Parameter(Mandatory,ValueFromPipeline)]
+    [ValidateScript({ $_ | Test-isValidSid})]
+    [string]$SID
+    )
+    Begin {}
+    Process {
+        try {
+            ([System.Security.Principal.SecurityIdentifier]$SID).Translate(
+                [System.Security.Principal.NTAccount]
+            ).Value
+        } catch {
+            Write-Warning -Message "Cannot translate SID to UserName for $($SID)"
+        }
+    }
+    End {}
+    }
+
+    $Dictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+    $AttribColl1 = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
+    $Param1Att = New-Object System.Management.Automation.ParameterAttribute
+    $Param1Att.Mandatory = $false
+    $AttribColl1.Add($Param1Att)
+
+    try {
+        If (-not(Get-PSDrive -Name HKU -ErrorAction SilentlyContinue)) {
+            $null = New-PSDrive -PSProvider Registry -Name HKU -Root HKEY_USERS -ErrorAction SilentlyContinue
+        }
+        $allUsers = (Get-Item -Path 'HKU:' -ErrorAction SilentlyContinue).GetSubKeyNames() |
+        ForEach-Object -Process {
+        if ($_ | Test-isValidSid) { $_ | Get-UserNameFromSID }
+        } -End {'*'}
+    } catch {
+        Throw 'Unable list available users'
+    }
+    if ($allUsers) {
+        $AttribColl1.Add((New-Object System.Management.Automation.ValidateSetAttribute($allUsers)))
+        $Dictionary.Add('User',(New-Object System.Management.Automation.RuntimeDefinedParameter('User', [string], $AttribColl1)))
+        $Dictionary
+    }
+}
 Begin {
+    #region Dynamic parameter users:
+    $Users = New-Object -TypeName System.Collections.ArrayList
+    $allUsers | Where-Object { $_  -ne '*'} |
+    ForEach-Object {
+        $n = $_
+        $sid = ([System.Security.Principal.NTAccount]$n).Translate([System.Security.Principal.SecurityIdentifier]).Value
+        $null = $Users.Add(
+            @{
+                UserName = $_
+                SID = $sid
+                Hive = "HKU:\$($sid)"
+                ProfilePath = $(
+                    try {
+                        (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$($sid)" -Name 'ProfileImagePath' -ErrorAction Stop
+                        ).'ProfileImagePath' -replace '%(s|S)(y|Y)(s|S)(t|T)(e|E)(m|M)(r|R)(o|O)(o|O)(t|T)%','C:\Windows'
+                    } catch {
+                       Write-Error 'Failed to get the profilepath'
+                    }
+                )
+            }
+        )
+    }
 
+    if ($PSBoundParameters.ContainsKey('User')) {
+        if ($PSBoundParameters['User'] -eq '*') {
+            $Users = $Users
+        } else {
+            $Users = $Users | Where-Object { $_['UserName'] -eq "$($PSBoundParameters['User'])" }
+        }
+    } else {
+        $Users = $Users | Where-Object { $_['UserName'] -eq $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) }
+        $Users['Hive'] = 'HKCU:'
+    }
+    #endregion
     #region Helperfunctions
 
     if ($PSVersionTable.PSEdition -ne 'Core') {
@@ -189,10 +289,16 @@ Begin {
     )
     Begin{
         if ($Path -match 'Wow6432Node') {
-            $ClassesPath = Join-Path -Path (Split-Path $Path -Qualifier) -ChildPath 'SOFTWARE\Wow6432Node\Classes\CLSID'
+            $cp = 'SOFTWARE\Wow6432Node\Classes\CLSID'
         } else {
-            $ClassesPath = Join-Path -Path (Split-Path $Path -Qualifier) -ChildPath 'SOFTWARE\Classes\CLSID'
+            $cp = 'SOFTWARE\Classes\CLSID'
         }
+        if ($Path -match '^HKCU:\\') {
+            $ClassesPath = Join-Path -Path (Split-Path $Path -Qualifier) -ChildPath $cp
+        } else {
+            $ClassesPath = Join-Path -Path ((($Path -split '\\',3)[0..1]) -join '\'  ) -ChildPath $cp
+        }
+        Write-Verbose -Message "Classes path set to $($ClassesPath)"
     }
     Process {
         try {
@@ -445,7 +551,6 @@ Begin {
             [Switch]$BootExecute,
             [Switch]$AppinitDLLs,
             [Switch]$ExplorerAddons,
-            [Switch]$SidebarGadgets,
             [Switch]$ImageHijacks,
             [Switch]$InternetExplorerAddons,
             [Switch]$KnownDLLs,
@@ -461,12 +566,13 @@ Begin {
             [Switch]$WMI,
             [Switch]$PSProfiles,
             [Switch]$ShowFileHash,
-            [Switch]$VerifyDigitalSignature
+            [Switch]$VerifyDigitalSignature,
+            [PSObject]$User=$Users
 
         )
         Begin {
             ## Add 'All' if nothing else was supplied
-            $parametersToIgnore = ("ShowFileHash","VerifyDigitalSignature") +
+            $parametersToIgnore = ("ShowFileHash","VerifyDigitalSignature",'User') +
                 [System.Management.Automation.PSCmdlet]::CommonParameters +
                 [System.Management.Automation.PSCmdlet]::OptionalCommonParameters
             if(($PSBoundParameters.Keys | Where-Object { $_ -notin $parametersToIgnore }).Count -eq 0)
@@ -664,10 +770,13 @@ Begin {
                 #endregion Explorer
 
                 #region User Explorer
+                $Users |
+                ForEach-Object {
+                $Hive = $_['Hive']
 
                 # Filter & Handler
                 'Filter','Handler' | ForEach-Object -Process {
-                    $key = "HKCU:\SOFTWARE\Classes\Protocols\$($_)"
+                    $key = "$($Hive)\SOFTWARE\Classes\Protocols\$($_)"
                     if (Test-Path -Path $key  -PathType Container) {
                         (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
                                 Get-RegValue -Path "$key\$($_)" -Name 'CLSID' @Category
@@ -675,17 +784,17 @@ Begin {
                     }
                 }
 
-                if (Test-Path -Path 'HKCU:\SOFTWARE\Microsoft\Internet Explorer\Desktop\Components' -PathType Container) {
-                    $key = 'HKCU:\SOFTWARE\Microsoft\Internet Explorer\Desktop\Components'
+                if (Test-Path -Path "$($Hive)\SOFTWARE\Microsoft\Internet Explorer\Desktop\Components" -PathType Container) {
+                    $key = "$($Hive)\SOFTWARE\Microsoft\Internet Explorer\Desktop\Components"
 	                (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
 			                Get-RegValue -Path "$key\$($_)" -Name 'Source' @Category
 	                }
                 }
 
                 # ShellServiceObjects
-                if (Test-Path -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ShellServiceObjects' -PathType Container) {
-                    $ClassesPath =  "HKCU:\SOFTWARE\$($_)\Classes\CLSID"
-                    $key = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ShellServiceObjects'
+                if (Test-Path -Path "$($Hive)\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ShellServiceObjects" -PathType Container) {
+                    $ClassesPath =  "$($Hive)\SOFTWARE\$($_)\Classes\CLSID"
+                    $key = "$($Hive)\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ShellServiceObjects"
                     (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
                         [pscustomobject]@{
                             Path = $key
@@ -697,7 +806,7 @@ Begin {
                 }
 
                 # ShellServiceObjectDelayLoad
-                Get-RegValue -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ShellServiceObjectDelayLoad' -Name '*' @Category
+                Get-RegValue -Path "$($Hive)\SOFTWARE\Microsoft\Windows\CurrentVersion\ShellServiceObjectDelayLoad" -Name '*' @Category
 
                 # Handlers
                 @(
@@ -712,12 +821,12 @@ Begin {
                     $Name = $_.Name
                     $Properties = $_.Properties
 
-                    $key = "HKCU:\Software\Classes\$Name\ShellEx"
+                    $key = "$($Hive)\Software\Classes\$Name\ShellEx"
                     $Properties | ForEach-Object -Process {
                         $subkey = Join-Path -Path $key -ChildPath $_
                         try {
                             (Get-Item -LiteralPath $subkey -ErrorAction SilentlyContinue).GetSubKeyNames() | ForEach-Object -Process {
-                                Get-RegValue -Path "$subkey\$($_)" -Name '*' @Category
+                                Get-RegValue -Path $subkey\$($_) -Name '*' @Category
                             }
                         } catch {
                         }
@@ -725,7 +834,7 @@ Begin {
                 }
 
                 # ShellIconOverlayIdentifiers
-                $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ShellIconOverlayIdentifiers'
+                $key = "$($Hive)\Software\Microsoft\Windows\CurrentVersion\Explorer\ShellIconOverlayIdentifiers"
                 if (Test-Path -Path $key -PathType Container) {
                     (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
                         Get-RegValue -Path "$key\$($_)" -Name '*' @Category
@@ -733,14 +842,15 @@ Begin {
                 }
 
                 # LangBarAddin
-                Get-RegValue -Path 'HKCU:\Software\Microsoft\Ctf\LangBarAddin' -Name '*' @Category
+                Get-RegValue -Path "$($Hive)\Software\Microsoft\Ctf\LangBarAddin" -Name '*' @Category
 
                 # NEW! POWELIKS use of Window's thumbnail cache
-                if (Test-Path -Path 'HKCU:\Software\Classes\Clsid\{AB8902B4-09CA-4bb6-B78D-A8F59079A8D5}') {
+                if (Test-Path -Path "$($Hive)\Software\Classes\Clsid\{AB8902B4-09CA-4bb6-B78D-A8F59079A8D5}") {
                     Write-Warning -Message 'Infected by PoweLiks malware'
                     # Step1: restore read access
                     try {
-                        $ParentACL = Get-Acl -Path 'HKCU:\Software\Classes\Clsid'
+                        $ParentACL = Get-Acl -Path "$($Hive)\Software\Classes\Clsid"
+                        # !!! Adapt here current user !!!
                         $k = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Classes\Clsid\{AB8902B4-09CA-4bb6-B78D-A8F59079A8D5}','ReadWriteSubTree','TakeOwnership')
                         $acl  = $k.GetAccessControl()
                         $acl.SetAccessRuleProtection($false,$true)
@@ -754,33 +864,13 @@ Begin {
                     # Step2: read the content of subkeys
                     'Inprocserver32','localserver32' | ForEach-Object {
                         try {
-                            (Get-ItemProperty -Path "HKCU:\Software\Classes\Clsid\{AB8902B4-09CA-4bb6-B78D-A8F59079A8D5}\$($_)" -Name '(default)' -ErrorAction Stop).'(default)'
+                            (Get-ItemProperty -Path "$($Hive)\Software\Classes\Clsid\{AB8902B4-09CA-4bb6-B78D-A8F59079A8D5}\$($_)" -Name '(default)' -ErrorAction Stop).'(default)'
                         } catch {
                         }
                     }
                 }
-                #endregion User Explorer
-            }
-            if ($All -or $SidebarGadgets) {
-                Write-Verbose -Message 'Looking for Sidebar gadgets'
-                #region User Sidebar gadgets
-
-                if (Test-Path (Join-Path -Path (Split-Path -Path $($env:AppData) -Parent) -ChildPath 'Local\Microsoft\Windows Sidebar\Settings.ini')) {
-
-                    Get-Content -Path (
-                        Join-Path -Path (Split-Path -Path $($env:AppData) -Parent) -ChildPath 'Local\Microsoft\Windows Sidebar\Settings.ini'
-                    ) |
-                    Select-String -Pattern '^PrivateSetting_GadgetName=' | ForEach-Object {
-
-                            [pscustomobject]@{
-                                Path = Join-Path -Path (Split-Path -Path $($env:AppData) -Parent) -ChildPath 'Local\Microsoft\Windows Sidebar\Settings.ini'
-                                Item = [string]::Empty
-                                Value = ($_.Line -split '=' | Select-Object -Last 1) -replace '%5C','\' -replace '%20',' '
-                                Category = 'SideBar Gadgets'
-                            }
-                     }
                 }
-                #endregion User Sidebar gadgets
+                #endregion User Explorer
             }
             if ($All -or $ImageHijacks) {
                 Write-Verbose -Message 'Looking for Image hijacks'
@@ -829,27 +919,29 @@ Begin {
                 #endregion Image Hijacks
 
                 #region User Image Hijacks
-
-                Get-RegValue -Path 'HKCU:\Software\Microsoft\Command Processor' -Name 'Autorun' @Category
+                $Users |
+                ForEach-Object {
+                $Hive = $_['Hive']
+                Get-RegValue -Path "$($Hive)\Software\Microsoft\Command Processor" -Name 'Autorun' @Category
 
                 # Exefile
-                if (Test-Path -Path 'HKCU:\SOFTWARE\Classes\Exefile\Shell\Open\Command') {
+                if (Test-Path -Path "$($Hive)\SOFTWARE\Classes\Exefile\Shell\Open\Command") {
                     [pscustomobject]@{
-                        Path = 'HKCU:\SOFTWARE\Classes\Exefile\Shell\Open\Command'
+                        Path = "$($Hive)\SOFTWARE\Classes\Exefile\Shell\Open\Command"
                         Item = 'exefile'
-                        Value = (Get-ItemProperty -Path 'HKCU:\SOFTWARE\Classes\Exefile\Shell\Open\Command' -Name '(default)').'(default)'
+                        Value = (Get-ItemProperty -Path "$($Hive)\SOFTWARE\Classes\Exefile\Shell\Open\Command" -Name '(default)').'(default)'
                         Category = 'Image Hijacks'
                     }
                 }
 
 	            '.exe','.cmd' | Foreach-Object {
-                    if (Test-Path -Path "HKCU:\Software\Classes\$($_)") {
-		                $assoc = (Get-ItemProperty -Path "HKCU:\Software\Classes\$($_)" -Name '(default)'-ErrorAction SilentlyContinue).'(default)'
+                    if (Test-Path -Path "$($Hive)\Software\Classes\$($_)") {
+		                $assoc = (Get-ItemProperty -Path "$($Hive)\Software\Classes\$($_)" -Name '(default)'-ErrorAction SilentlyContinue).'(default)'
                         if ($assoc) {
                             [pscustomobject]@{
-                                Path = "HKCU:\Software\Classes\$assoc\shell\open\command"
+                                Path = "$($Hive)\Software\Classes\$assoc\shell\open\command"
                                 Item = $_
-                                Value = (Get-ItemProperty -Path "HKCU:\SOFTWARE\Classes\$assoc\Shell\Open\Command" -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
+                                Value = (Get-ItemProperty -Path "$($Hive)\SOFTWARE\Classes\$assoc\Shell\Open\Command" -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
                                 Category = 'Image Hijacks'
                             }
                         }
@@ -857,13 +949,14 @@ Begin {
 	            }
 
                 # Htmlfile
-                if (Test-Path -Path 'HKCU:\SOFTWARE\Classes\htmlfile\shell\open\command') {
+                if (Test-Path -Path "$($Hive)\SOFTWARE\Classes\htmlfile\shell\open\command") {
                     [pscustomobject]@{
-                        Path = 'HKCU:\SOFTWARE\Classes\htmlfile\shell\open\command'
+                        Path = "$($Hive)\SOFTWARE\Classes\htmlfile\shell\open\command"
                         Item = 'htmlfile'
-                        Value = (Get-ItemProperty -Path 'HKCU:\SOFTWARE\Classes\htmlfile\shell\open\command' -Name '(default)').'(default)'
+                        Value = (Get-ItemProperty -Path "$($Hive)\SOFTWARE\Classes\htmlfile\shell\open\command" -Name '(default)').'(default)'
                         Category = 'Image Hijacks'
                     }
+                }
                 }
                 #endregion User Image Hijacks
             }
@@ -924,10 +1017,12 @@ Begin {
                 #endregion Internet Explorer
 
                 #region User Internet Explorer
-
+                $Users |
+                ForEach-Object {
+                $Hive = $_['Hive']
                 # UrlSearchHooks
                 $ClassesPath =  'HKLM:\SOFTWARE\Classes\CLSID'
-                $key = 'HKCU:\Software\Microsoft\Internet Explorer\UrlSearchHooks'
+                $key = "$($Hive)\Software\Microsoft\Internet Explorer\UrlSearchHooks"
                 if (Test-Path -Path $key -PathType Container) {
                     (Get-Item -Path $key).GetValueNames() | ForEach-Object -Process {
                         [pscustomobject]@{
@@ -942,7 +1037,7 @@ Begin {
                 # Explorer Bars
                 $null,'Wow6432Node' | Foreach-Object -Process {
                     $ClassesPath =  "HKLM:\SOFTWARE\$($_)\Classes\CLSID"
-                    $key = "HKCU:\SOFTWARE\$($_)\Microsoft\Internet Explorer\Explorer Bars"
+                    $key = "$($Hive)\SOFTWARE\$($_)\Microsoft\Internet Explorer\Explorer Bars"
                     if (Test-Path -Path $key -PathType Container) {
                         (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
                             [pscustomobject]@{
@@ -957,14 +1052,14 @@ Begin {
 
                 # IE Extensions
                 $null,'Wow6432Node' | Foreach-Object {
-                    $key = "HKCU:\SOFTWARE\$($_)\Microsoft\Internet Explorer\Extensions"
+                    $key = "$($Hive)\SOFTWARE\$($_)\Microsoft\Internet Explorer\Extensions"
                     if (Test-Path -Path $key -PathType Container) {
                         (Get-Item -Path $key -ErrorAction SilentlyContinue).GetSubKeyNames() | ForEach-Object -Process {
                             Get-RegValue -Path "$key\$($_)" -Name 'ClsidExtension' @Category
                         }
                     }
                 }
-
+                }
                 #endregion User Internet Explorer
             }
             if ($All -or $KnownDLLs) {
@@ -980,7 +1075,7 @@ Begin {
                 $Category = @{ Category = 'Logon'}
 
                 # Winlogon
-                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name 'VmApplet','Userinit','Shell','TaskMan' @Category
+                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name 'VmApplet','Userinit','Shell','TaskMan','AppSetup' @Category
 
                 # UserInitMprLogonScript
                 if (Test-Path -Path 'HKLM:\Environment' -PathType Container) {
@@ -1015,7 +1110,7 @@ Begin {
                 }
 
                 # Local GPO scripts
-                'Startup','Shutdown' | ForEach-Object -Process {
+                'Startup','Shutdown','Logon','Logoff' | ForEach-Object -Process {
                     $key = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\$($_)"
                     if (Test-Path -Path $key) {
                         (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
@@ -1037,9 +1132,26 @@ Begin {
                 Get-RegValue -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\AlternateShells' -Name 'AvailableShells' @Category
 
                 # Terminal server
-                # Removed from 13.82 but key/value still exist
+                # Removed from 13.82 but key/value still exist > restored as of 13.90
                 Get-RegValue -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\Wds\rdpwd' -Name 'StartupPrograms' @Category
-                # Removed from 13.82 but key/value still exist
+
+                # Restored as of 13.90
+                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Runonce' -Name '*' @Category
+                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx' -Name '*' @Category
+                $key = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx'
+                if (Test-Path -Path $key -PathType Container) {
+                    (Get-Item -Path $key).GetSubKeyNames() |
+                    ForEach-Object -Process {
+                        Get-RegValue -Path "$key\$($_)" -Name '*' @Category
+                        if (Test-Path -Path "$key\$($_)\Depend" -PathType Container) {
+                            Get-RegValue -Path "$key\$($_)\Depend" -Name '*' @Category
+                        }
+                    }
+                }
+
+                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run' -Name '*' @Category
+
+                # Removed from 13.82 but key/value still exist > restored in 13.90
                 Get-RegValue -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp'  -Name 'InitialProgram' @Category
 
                 # Run
@@ -1050,6 +1162,19 @@ Begin {
 
                 # RunOnceEx
                 $null,'Wow6432Node' | Foreach-Object { Get-RegValue -Path "HKLM:\SOFTWARE\$($_)\Microsoft\Windows\CurrentVersion\RunOnceEx" -Name '*' @Category }
+
+                $null,'Wow6432Node' | Foreach-Object {
+                    $key = "HKLM:\SOFTWARE\$($_)\Microsoft\Windows\CurrentVersion\RunOnceEx"
+                    if (Test-Path -Path $key -PathType Container) {
+                        (Get-Item -Path $key).GetSubKeyNames() |
+                        ForEach-Object -Process {
+                            Get-RegValue -Path "$key\$($_)" -Name '*' @Category
+                                if (Test-Path -Path "$key\$($_)\Depend" -PathType Container) {
+                                    Get-RegValue -Path "$key\$($_)\Depend" -Name '*' @Category
+                                }
+                        }
+                    }
+                }
 
                 # LNK files or direct executable
                 if (Test-Path -Path "$($env:systemdrive)\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup" -PathType Container) {
@@ -1078,7 +1203,15 @@ Begin {
                                 break
 
                             }
-                            default {}
+                            # Anything else: not lnk and not PE
+                            default {
+                                [pscustomobject]@{
+                                    Path = "$($env:systemdrive)\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup"
+                                    Item = $File.Name
+                                    Value = $File.FullName
+                                    Category = 'Logon'
+                                }
+                            }
                         }
                     }
                 }
@@ -1103,10 +1236,12 @@ Begin {
                 #endregion Logon
 
                 #region User Logon
-
+                $Users |
+                ForEach-Object {
+                $Hive = $_['Hive']
                 # Local GPO scripts
-                'Logon','Logoff' | ForEach-Object -Process {
-                    $key = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\$($_)"
+                'Startup','Shutdown','Logon','Logoff' | ForEach-Object -Process {
+                    $key = "$($Hive)\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\$($_)"
                     if (Test-Path -Path $key) {
                         (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
                             $subkey = (Join-Path -Path $key -ChildPath $_)
@@ -1120,14 +1255,15 @@ Begin {
                 }
 
                 # UserInitMprLogonScript
-                if (Test-Path -Path 'HKCU:\Environment' -PathType Container) {
-                    Get-RegValue -Path 'HKCU:\Environment' -Name 'UserInitMprLogonScript' @Category
+                if (Test-Path -Path "$($Hive)\Environment" -PathType Container) {
+                    Get-RegValue -Path "$($Hive)\Environment" -Name 'UserInitMprLogonScript' @Category
                 }
 
                 # Shell override by GPO
-                Get-RegValue -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System' -Name 'Shell' @Category
+                Get-RegValue -Path "$($Hive)\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name 'Shell' @Category
 
                 # LNK files or direct executable
+                # !!!! Adapt Appdata with profile path  !!!
                 if (Test-Path -Path "$($env:AppData)\Microsoft\Windows\Start Menu\Programs\Startup") {
                     $Wsh = new-object -comobject 'WScript.Shell'
                     Get-ChildItem -Path "$($env:AppData)\Microsoft\Windows\Start Menu\Programs\Startup" |ForEach-Object {
@@ -1154,32 +1290,67 @@ Begin {
                                 break
 
                             }
-                            default {}
+                            # Anything else: not lnk and not PE
+                            default {
+                                [pscustomobject]@{
+                                    Path = "$($env:AppData)\Microsoft\Windows\Start Menu\Programs\Startup"
+                                    Item = $File.Name
+                                    Value = $File.FullName
+                                    Category = 'Logon'
+                                }
+                            }
                         }
                     }
                 }
 
-                Get-RegValue -Path 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows' -Name 'Load' @Category
-                Get-RegValue -Path 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows' -Name 'Run' @Category
+                Get-RegValue -Path "$($Hive)\Software\Microsoft\Windows NT\CurrentVersion\Windows" -Name 'Load' @Category
+                Get-RegValue -Path "$($Hive)\Software\Microsoft\Windows NT\CurrentVersion\Windows" -Name 'Run' @Category
 
                 # Run by GPO
-                Get-RegValue -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run' -Name '*' @Category
+                Get-RegValue -Path "$($Hive)\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run" -Name '*' @Category
 
                 # Run
                 $null,'Wow6432Node' | ForEach-Object {
-                    Get-RegValue -Path "HKCU:\Software\$($_)\Microsoft\Windows\CurrentVersion\Run" -Name '*' @Category
+                    Get-RegValue -Path "$($Hive)\Software\$($_)\Microsoft\Windows\CurrentVersion\Run" -Name '*' @Category
                 }
 
                 # RunOnce
                 $null,'Wow6432Node' | ForEach-Object {
-                    Get-RegValue -Path "HKCU:\Software\$($_)\Microsoft\Windows\CurrentVersion\RunOnce" -Name '*' @Category
+                    Get-RegValue -Path "$($Hive)\Software\$($_)\Microsoft\Windows\CurrentVersion\RunOnce" -Name '*' @Category
                 }
 
                 # RunOnceEx
                 $null,'Wow6432Node' | ForEach-Object {
-                    Get-RegValue -Path "HKCU:\Software\$($_)\Microsoft\Windows\CurrentVersion\RunOnceEx" -Name '*' @Category
+                    Get-RegValue -Path "$($Hive)\Software\$($_)\Microsoft\Windows\CurrentVersion\RunOnceEx" -Name '*' @Category
+                }
+                $null,'Wow6432Node' | Foreach-Object {
+                    $key = "$($Hive)\SOFTWARE\$($_)\Microsoft\Windows\CurrentVersion\RunOnceEx"
+                    if (Test-Path -Path $key -PathType Container) {
+                        (Get-Item -Path $key).GetSubKeyNames() |
+                        ForEach-Object -Process {
+                            Get-RegValue -Path "$key\$($_)" -Name '*' @Category
+                            if (Test-Path -Path "$key\$($_)\Depend" -PathType Container) {
+                                Get-RegValue -Path "$key\$($_)\Depend" -Name '*' @Category
+                            }
+                        }
+                    }
                 }
 
+                # Restored as of 13.90
+                Get-RegValue -Path "$($Hive)\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Runonce" -Name '*' @Category
+                Get-RegValue -Path "$($Hive)\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx" -Name '*' @Category
+                $key = "$($Hive)\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx"
+                if (Test-Path -Path $key -PathType Container) {
+                    (Get-Item -Path $key).GetSubKeyNames() |
+                    ForEach-Object -Process {
+                        Get-RegValue -Path "$key\$($_)" -Name '*' @Category
+                        if (Test-Path -Path "$key\$($_)\Depend" -PathType Container) {
+                            Get-RegValue -Path "$key\$($_)\Depend" -Name '*' @Category
+                        }
+                    }
+                }
+                Get-RegValue -Path "$($Hive)\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run" -Name '*' @Category
+                }
                 #endregion User Logon
 
             }
@@ -1266,20 +1437,22 @@ Begin {
                 #endregion Codecs
 
                 #region User Codecs
-
+                $Users |
+                ForEach-Object {
+                $Hive = $_['Hive']
                 # Drivers32
 	            $null,'Wow6432Node' | Foreach-Object {
-		            Get-RegValue -Path "HKCU:\Software\$($_)\Microsoft\Windows NT\CurrentVersion\Drivers32" -Name '*' @Category
+		            Get-RegValue -Path "$($Hive)\Software\$($_)\Microsoft\Windows NT\CurrentVersion\Drivers32" -Name '*' @Category
 	            }
 
                 # Filter
-	            $key = 'HKCU:\Software\Classes\Filter'
+	            $key = "$($Hive)\Software\Classes\Filter"
                 if (Test-Path -Path $key -PathType Container) {
 		            (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
                         [pscustomobject]@{
                             Path = $key
                             Item = $_
-                            Value = (Get-ItemProperty -Path (Join-Path -Path 'HKCU:\SOFTWARE\Classes\CLSID' -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
+                            Value = (Get-ItemProperty -Path (Join-Path -Path "$($Hive)\SOFTWARE\Classes\CLSID" -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
                             Category = 'Codecs'
                         }
 		            }
@@ -1290,14 +1463,14 @@ Begin {
 	            '{7ED96837-96F0-4812-B211-F13C24117ED3}','{ABE3B9A4-257D-4B97-BD1A-294AF496222E}') | Foreach-Object -Process {
 		            $Item = $_
 		            $null,'Wow6432Node' | Foreach-Object {
-			            $key = "HKCU:\Software\$($_)\Classes\CLSID\$Item\Instance"
+			            $key = "$($Hive)\Software\$($_)\Classes\CLSID\$Item\Instance"
                         if (Test-Path -Path $key -PathType Container) {
 			                (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
                                 try {
 	                                [pscustomobject]@{
 	                                    Path = $key
 	                                    Item = $_
-	                                    Value = (Get-ItemProperty -Path (Join-Path -Path 'HKCU:\SOFTWARE\Classes\CLSID' -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction Stop).'(default)'
+	                                    Value = (Get-ItemProperty -Path (Join-Path -Path "$($Hive)\SOFTWARE\Classes\CLSID" -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction Stop).'(default)'
 	                                    Category = 'Codecs'
 	                                }
                                 } catch {
@@ -1306,7 +1479,7 @@ Begin {
                         }
 		            }
 	            }
-
+                }
                 #endregion User Codecs
             }
             if ($All -or $OfficeAddins) {
@@ -1320,12 +1493,12 @@ Begin {
                 $Category = @{ Category = 'Office Addins'}
                 $null,'Wow6432Node' | Foreach-Object {
                     $arc = $_
-                    'HKLM','HKCU' | ForEach-Object {
+                    'HKLM:',$Users.ForEach({ $_['Hive']}) | ForEach-Object {
                         $root = $_
-                        if (Test-Path "$($root):\SOFTWARE\$($arc)\Microsoft\Office") {
-                            (Get-Item "$($root):\SOFTWARE\$($arc)\Microsoft\Office").GetSubKeyNames() | ForEach-Object {
-                                if (Test-Path -Path (Join-Path -Path "$($root):\SOFTWARE\$($arc)\Microsoft\Office" -ChildPath "$($_)\Addins") -PathType Container) {
-                                    $key = (Join-Path -Path "$($root):\SOFTWARE\$($arc)\Microsoft\Office" -ChildPath "$($_)\Addins")
+                        if (Test-Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office") {
+                            (Get-Item "$($root)\SOFTWARE\$($arc)\Microsoft\Office").GetSubKeyNames() | ForEach-Object {
+                                if (Test-Path -Path (Join-Path -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office" -ChildPath "$($_)\Addins") -PathType Container) {
+                                    $key = (Join-Path -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office" -ChildPath "$($_)\Addins")
                                     # Iterate through the Addins names
                                     (Get-item -Path $key).GetSubKeyNames() | ForEach-Object {
                                         try {
@@ -1355,15 +1528,15 @@ Begin {
                     } # hklm or hkcu
                 }
                 # Microsoft Office Memory Corruption Vulnerability (CVE-2015-1641)
-                'HKLM','HKCU' | ForEach-Object {
+                'HKLM:',$Users.ForEach({ $_['Hive']}) | ForEach-Object {
                     $root = $_
-                    $key = "$($root):\SOFTWARE\Microsoft\Office test\Special\Perf"
-                    if (Test-Path "$($root):\SOFTWARE\Microsoft\Office test\Special\Perf") {
-                        if ((Get-ItemProperty -Path "$($root):\SOFTWARE\Microsoft\Office test\Special\Perf" -Name '(default)' -ErrorAction SilentlyContinue).'(default)') {
+                    $key = "$($root)\SOFTWARE\Microsoft\Office test\Special\Perf"
+                    if (Test-Path "$($root)\SOFTWARE\Microsoft\Office test\Special\Perf") {
+                        if ((Get-ItemProperty -Path "$($root)\SOFTWARE\Microsoft\Office test\Special\Perf" -Name '(default)' -ErrorAction SilentlyContinue).'(default)') {
 	                        [pscustomobject]@{
 	                            Path = $key
 	                            Item = '(default)'
-                                Value = (Get-ItemProperty -Path "$($root):\SOFTWARE\Microsoft\Office test\Special\Perf" -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
+                                Value = (Get-ItemProperty -Path "$($root)\SOFTWARE\Microsoft\Office test\Special\Perf" -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
                                 Category = 'Office Addins';
 	                        }
                         }
@@ -1557,11 +1730,13 @@ Begin {
                 #endregion Winlogon
 
                 #region User Winlogon
+                $Users |
+                ForEach-Object {
+                $Hive = $_['Hive']
+                Get-RegValue -Path "$($Hive)\SOFTWARE\Policies\Microsoft\Windows\Control Panel\Desktop" -Name 'Scrnsave.exe' @Category
 
-                Get-RegValue -Path 'HKCU:\SOFTWARE\Policies\Microsoft\Windows\Control Panel\Desktop' -Name 'Scrnsave.exe' @Category
-
-                Get-RegValue -Path 'HKCU:\Control Panel\Desktop' -Name 'Scrnsave.exe' @Category
-
+                Get-RegValue -Path "$($Hive)\Control Panel\Desktop" -Name 'Scrnsave.exe' @Category
+                }
                 #endregion User Winlogon
             }
             if ($All -or $WMI) {
@@ -1729,7 +1904,15 @@ Begin {
                                 # Rundll32
                                 '^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?rundll32\.exe\s(/[a-z]\s)?.*,.*' {
                                     Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
-                                        @([regex]'^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?rundll32\.exe\s(/[a-z]\s)?(%windir%\\(s|S)ystem32\\)?(?<File>.*),').Matches($_) |
+                                        @([regex]'^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?rundll32\.exe\s(/[a-z]\s)?((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?(?<File>.*),').Matches($_) |
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )
+                                    break
+                                }
+                                # cscript
+                                '^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?(c|w)script\.exe\s(//?[a-zA-Z:]+\s){0,}.*' {
+                                    Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
+                                        @([regex]'^((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?(c|w)script\.exe\s(//?[a-zA-Z:]+\s){0,}((%windir%|%(s|S)ystem(r|R)oot%)\\(s|S)ystem32\\)?(?<File>.*\.[a-zA-Z0-9]{1,3})\s?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
@@ -1900,27 +2083,18 @@ Begin {
                     Drivers {
                         $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
                             switch -Regex ($Item.Value) {
-                                #'^\\SystemRoot\\System32\\drivers\\' {
                                 '^\\SystemRoot\\System32\\' {
                                     $_ -replace '\\Systemroot',"$($env:systemroot)"
                                     break;
                                 }
-                                <#
-                                '^System32\drivers\\' {
-                                    Join-Path -Path "$($env:systemroot)" -ChildPath $_
-                                    break;
-                                }
-                                #>
                                 '^System32\\[dD][rR][iI][vV][eE][rR][sS]\\' {
                                     Join-Path -Path "$($env:systemroot)" -ChildPath $_
                                     break;
                                 }
-                                <#
-                                '^system32\\DRIVERS\\' {
+                                '^SysWow64\\[dD][rR][iI][vV][eE][rR][sS]\\' {
                                     Join-Path -Path "$($env:systemroot)" -ChildPath $_
                                     break;
                                 }
-                                #>
                                 '^\\\?\?\\C:\\Windows\\system32\\drivers' {
                                     $_ -replace '\\\?\?\\',''
                                     break;
@@ -2050,6 +2224,14 @@ Begin {
                                             }
                                         }
 
+                                    ) -Force -PassThru
+                                }
+                            }
+                        } elseif ($Item.Path -imatch 'runonceEx' -and $Item.Value -match '|') {
+                            $Item.Value -split '\|' | ForEach-Object {
+                                if ($_ -ne [string]::Empty) {
+                                    $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
+                                        $_
                                     ) -Force -PassThru
                                 }
                             }
@@ -2203,7 +2385,7 @@ Begin {
                     Services {
                         $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
                             switch -Regex ($Item.Value) {
-                            '^"?[A-Za-z]:\\[Ww][iI][nN][dD][oO][Ww][sS]\\' {
+                            '^"?[A-Za-z]:\\[Ww][iI][nN][dD][oO][Ww][sS]\\(?<FilePath>.*\.(exe|dll))\s?' {
                                 Join-Path -Path "$($env:systemroot)" -ChildPath (
                                     @([regex]'^"?[A-Za-z]:\\[Ww][iI][nN][dD][oO][Ww][sS]\\(?<FilePath>.*\.(exe|dll))\s?').Matches($_) |
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
@@ -2284,8 +2466,17 @@ Begin {
                     }
                     WMI {
                         if ($Item.Value) {
-                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $($Item.Value -replace '"','') -Force -PassThru
-
+                            $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
+                                Switch -Regex (($Item.Value -replace '"','')) {
+                                    '^%SystemRoot%\\system32\\' {
+                                        $_ -replace '%SystemRoot%',"$($env:SystemRoot)";
+                                        break;
+                                    }
+                                    default {
+                                        $_;
+                                    }
+                                }
+                            ) -Force -PassThru
                         } else {
                             $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $null -Force -PassThru
                         }
@@ -2452,6 +2643,10 @@ Process {
     } else {
         $GetSig = $false
     }
+    if ($PSBoundParameters.ContainsKey('User')) {
+        $null = $PSBoundParameters.Remove('User')
+    }
+    $PSBoundParameters.Add('User',$Users)
     Get-PSRawAutoRun @PSBoundParameters |
     Get-PSPrettyAutorun |
     Add-PSAutoRunExtendedInfo |
@@ -2520,4 +2715,17 @@ Get-PSAutorun -WMI -VerifyDigitalSignature | Where { -not $_.isOSBinary }
     -HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx
     -HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run
     -HKLM\System\CurrentControlSet\Control\ServiceControlManagerExtension
+# From 13.82 to 13.90
+    -AppData\Local\Microsoft\Windows Sidebar\Settings.ini
+    +HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\AppSetup
+    +HKCU\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Startup
+    +HKCU\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Shutdown
+    +HKLM\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Logon
+    +HKLM\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Logoff
+    +HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Runonce
+    +HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx
+    +HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run
+    +HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Runonce
+    +HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx
+    +HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run
 #>
