@@ -85,7 +85,7 @@ Function Get-PSAutorun {
         '*' can be used to indicate that all loaded user hives will be scanned.
 #>
 
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Pretty')]
     Param(
         [switch]$All,
         [Switch]$BootExecute,
@@ -104,7 +104,14 @@ Function Get-PSAutorun {
         [Switch]$ScheduledTasks,
         [Switch]$Winlogon,
         [Switch]$WMI,
+
+        [Parameter(ParameterSetName='Plain')]
+        [Switch]$Raw,
+
+        [Parameter(ParameterSetName='Pretty')]
         [Switch]$ShowFileHash,
+
+        [Parameter(ParameterSetName='Pretty')]
         [Switch]$VerifyDigitalSignature
     )
 DynamicParam  {
@@ -562,12 +569,13 @@ Begin {
             [Switch]$WMI,
             [Switch]$ShowFileHash,
             [Switch]$VerifyDigitalSignature,
+            [Switch]$Raw,
             [PSObject]$User=$Users
 
         )
         Begin {
             ## Add 'All' if nothing else was supplied
-            $parametersToIgnore = ("ShowFileHash","VerifyDigitalSignature",'User') +
+            $parametersToIgnore = ('ShowFileHash','VerifyDigitalSignature','User','Raw') +
                 [System.Management.Automation.PSCmdlet]::CommonParameters +
                 [System.Management.Automation.PSCmdlet]::OptionalCommonParameters
             if(($PSBoundParameters.Keys | Where-Object { $_ -notin $parametersToIgnore }).Count -eq 0)
@@ -2591,25 +2599,35 @@ Begin {
 
 }
 Process {
-    if ($PSBoundParameters.ContainsKey('ShowFileHash')) {
-        $GetHash = $true
-    } else {
-        $GetHash = $false
+    Switch ($PSCmdlet.ParameterSetName) {
+        'Plain' {
+            Get-PSRawAutoRun @PSBoundParameters
+            break
+        }
+        'Pretty' {
+            if ($PSBoundParameters.ContainsKey('ShowFileHash')) {
+                $GetHash = $true
+            } else {
+                $GetHash = $false
+            }
+            if ($PSBoundParameters.ContainsKey('VerifyDigitalSignature')) {
+                $GetSig = $true
+            } else {
+                $GetSig = $false
+            }
+            if ($PSBoundParameters.ContainsKey('User')) {
+                $null = $PSBoundParameters.Remove('User')
+            }
+            $PSBoundParameters.Add('User',$Users)
+            Get-PSRawAutoRun @PSBoundParameters |
+            Get-PSPrettyAutorun |
+            Add-PSAutoRunExtendedInfo |
+            Add-PSAutoRunHash -ShowFileHash:$GetHash |
+            Add-PSAutoRunAuthentiCodeSignature -VerifyDigitalSignature:$GetSig
+            break
+        }
+        default {}
     }
-    if ($PSBoundParameters.ContainsKey('VerifyDigitalSignature')) {
-        $GetSig = $true
-    } else {
-        $GetSig = $false
-    }
-    if ($PSBoundParameters.ContainsKey('User')) {
-        $null = $PSBoundParameters.Remove('User')
-    }
-    $PSBoundParameters.Add('User',$Users)
-    Get-PSRawAutoRun @PSBoundParameters |
-    Get-PSPrettyAutorun |
-    Add-PSAutoRunExtendedInfo |
-    Add-PSAutoRunHash -ShowFileHash:$GetHash |
-    Add-PSAutoRunAuthentiCodeSignature -VerifyDigitalSignature:$GetSig
 }
 End {}
 }
