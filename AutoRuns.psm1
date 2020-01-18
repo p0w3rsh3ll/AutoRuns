@@ -2315,6 +2315,14 @@ Begin {
                                         break
                                     }
                                     # C:\Users
+                                    '^"?C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})("|\s)?' {
+                                        Join-Path -Path 'C:\Users' -ChildPath (
+                                            @([regex]'^"?C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})("|\s)?').Matches($_) |
+                                            Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                        )
+                                        break
+                                    }
+                                    # "C:\
                                     '^"[A-Za-z]:\\' {
                                         ($_ -split '"')[1]
                                             break
