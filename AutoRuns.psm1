@@ -1498,7 +1498,7 @@ Begin {
                     $arc = $_
                     'HKLM:',$Users.ForEach({ $_['Hive']}) | ForEach-Object {
                         $root = $_
-                        if (Test-Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office") {
+                        if (Test-Path -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office") {
                             (Get-Item "$($root)\SOFTWARE\$($arc)\Microsoft\Office").GetSubKeyNames() | ForEach-Object {
                                 if (Test-Path -Path (Join-Path -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office" -ChildPath "$($_)\Addins") -PathType Container) {
                                     $key = (Join-Path -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office" -ChildPath "$($_)\Addins")
@@ -1984,6 +1984,14 @@ Begin {
                                 '^(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\' {
                                     Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
                                         @([regex]'^(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\(?<File>.*\.[a-z0-9]{1,})\s?').Matches($_) |
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )
+                                    break
+                                }
+                                # Users
+                                '^"?C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})("|\s)?' {
+                                    Join-Path -Path 'C:\Users' -ChildPath (
+                                        @([regex]'^"?C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})("|\s)?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
