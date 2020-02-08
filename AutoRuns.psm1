@@ -60,6 +60,9 @@ Function Get-PSAutorun {
     .PARAMETER WMI
         Switch to gather artifacts from the WMI category.
 
+    .PARAMETER PSProfiles
+        Switch to gather artifacts from the PowerShell profiles category.
+
     .PARAMETER ShowFileHash
         Switch to enable and display MD5, SHA1 and SHA2 file hashes.
 
@@ -104,6 +107,7 @@ Function Get-PSAutorun {
         [Switch]$ScheduledTasks,
         [Switch]$Winlogon,
         [Switch]$WMI,
+        [Switch]$PSProfiles,
 
         [Parameter(ParameterSetName='Plain')]
         [Switch]$Raw,
@@ -567,6 +571,7 @@ Begin {
             [Switch]$ScheduledTasks,
             [Switch]$Winlogon,
             [Switch]$WMI,
+            [Switch]$PSProfiles,
             [Switch]$ShowFileHash,
             [Switch]$VerifyDigitalSignature,
             [Switch]$Raw,
@@ -1830,6 +1835,39 @@ Begin {
                     }
                 }
             }
+            if ($All -or $PSProfiles) {
+
+                $profiles = New-Object -TypeName System.Collections.ArrayList 
+                'C:\Windows\SysWOW64\WindowsPowerShell\v1.0',
+                'C:\Windows\System32\WindowsPowerShell\v1.0',
+                $global:home | ForEach-Object {
+                    $null = $profiles.Add($_)
+                }
+
+                if ($PSVersionTable.PSEdition -eq 'Core') {
+                    $null = $profiles.Add($global:PSHOME) # for PS Core, use public constant
+                }
+
+                $profiles | 
+                ForEach-Object {
+
+                    $root = $_
+                    'profile.ps1',
+                    'Microsoft.PowerShell_profile.ps1',
+                    'Microsoft.PowerShellISE_profile.ps1' | 
+                    ForEach-Object {
+
+                        if (Test-Path -Path (Join-Path -Path $root -ChildPath $_) -PathType Leaf) {
+                            [pscustomobject]@{
+                                Path = $root
+                                Item = $_
+                                Value = (Join-Path -Path $root -ChildPath $_)
+                                Category = 'PowerShell profiles'
+                            }
+                        }
+                    }
+                }
+            }
         }
         End {
         }
@@ -2482,6 +2520,10 @@ Begin {
                         } else {
                             $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $null -Force -PassThru
                         }
+                        break
+                    }
+                    'PowerShell Profiles' {
+                        $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value "$($Item.Value)" -Force -PassThru
                         break
                     }
                     default {
