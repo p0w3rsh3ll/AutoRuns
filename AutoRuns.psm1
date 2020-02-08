@@ -1504,7 +1504,7 @@ Begin {
                     'HKLM:',$Users.ForEach({ $_['Hive']}) | ForEach-Object {
                         $root = $_
                         if (Test-Path -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office") {
-                            (Get-Item "$($root)\SOFTWARE\$($arc)\Microsoft\Office").GetSubKeyNames() | ForEach-Object {
+                            (Get-Item -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office").GetSubKeyNames() | ForEach-Object {
                                 if (Test-Path -Path (Join-Path -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office" -ChildPath "$($_)\Addins") -PathType Container) {
                                     $key = (Join-Path -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office" -ChildPath "$($_)\Addins")
                                     # Iterate through the Addins names
@@ -1927,10 +1927,43 @@ Begin {
                                 }
                                 # special powershell
                                 '[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}' {
+                                    Function Get-EnvReplacement {
+                                    [CmdletBinding()]
+                                    Param(
+                                    [Parameter(Mandatory,ValueFromPipeline)]
+                                    [string]$Value
+                                    )
+                                    Begin {}
+                                    Process {}
+                                    End {
+                                        $envVar= ($Value -split '%')[1]
+                                        # Write-Verbose -Message "-$($envVar)-" -Verbose
+                                        if ($envVar) {
+                                            Get-ChildItem -Path 'Env:' | Where-Object {$_.Name -eq "$($envVar)"} |
+                                            ForEach-Object {
+                                                if ($Value -match "$($_.Name)") {
+                                                    $Value -replace "%$($_.Name)%","$($_.Value)"
+                                                }
+                                            }
+                                        } else {
+                                            $Value
+                                        }
+                                    }
+                                    }
                                     switch -regex ($_) {
                                         '\s-[fF]' {
                                             @([regex]'(-[fF][iI]?[lL]?[eE]?)\s{1,}?"?(?<File>.+\.[pP][sS]1)"?\s?').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value | ForEach-Object  { ($_ -replace '"','').Trim()}
+                                            break
+                                        }
+                                        '.[pP][sS]1\s' {
+                                            @([regex]'([^\s]+)(?<=\.[pP][sS]1)').Matches($_) |
+                                            Select-Object -Expand Groups | Select-Object -Last 1 -ExpandProperty Value | Get-EnvReplacement
+                                            break
+                                        }
+                                        '.[pP][sS]1"' {
+                                            @([regex]'([^"]+)(?<=\.[pP][sS]1)').Matches($_) |
+                                            Select-Object -Expand Groups | Select-Object -Last 1 -ExpandProperty Value | Get-EnvReplacement
                                             break
                                         }
                                         '.[pP][sS]1' {
