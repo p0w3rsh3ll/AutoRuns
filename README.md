@@ -175,6 +175,9 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 
 ## Original [Autoruns.exe](https://docs.microsoft.com/en-us/sysinternals/downloads/autoruns) from Mark Russinovich
 
+[Autoruns v13.95](https://blogs.technet.microsoft.com/sysinternals/2019/06/12/sysmon-v10-0-autoruns-v13-95-vmmap-v3-26/)
+>This Autoruns update adds support for user Shell folders redirections.
+
 [Autoruns v13.94](https://blogs.technet.microsoft.com/sysinternals/2019/02/19/sysmon-v9-0-autoruns-v13-94/)
 >This Autoruns update fixes a bug that prevented the correct display of the target of image hosts such as svchost.exe, rundll32.exe, and cmd.exe.
 
@@ -221,21 +224,19 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 > This major update to Autoruns, an autostart execution point (ASEP) manager, now has integration with Virustotal.com to show the status of entries with respect to scans by over four dozen antimalware engines. It also includes a revamped scanning architecture that supports dynamic filters, including a free-form text filter, a greatly improved compare feature that highlights not just new items but deleted ones as well, and file saving and loading that preserves all the information of a scan
 
 [Autoruns v12.03](https://blogs.technet.microsoft.com/sysinternals/2014/09/11/updates-handle-v4-0-procdump-v7-01-procexp-v16-04-regjump-v1-02-autoruns-v12-03/)
- >This update to Autoruns adds the registered HTML file extension, fixes a bug that could cause disabling of specific entry types to fail with a “path not found” error, and addresses another that could prevent the Jump-to-image function from opening the selected image on 64-bit Windows.
-
+>This update to Autoruns adds the registered HTML file extension, fixes a bug that could cause disabling of specific entry types to fail with a “path not found” error, and addresses another that could prevent the Jump-to-image function from opening the selected image on 64-bit Windows.
  
- [Autoruns v12.02](https://blogs.technet.microsoft.com/sysinternals/2014/08/19/updates-autoruns-v12-02-coreinfo-v3-31-sysmon-v1-01-whois-v1-12/)
- >This fixes a bug that could cause Autoruns to crash on startup, updates the image path parsing for Installed Components to remove false positive file-not-found entries, and correctly reports image entry timestamps in local time instead of UTC.
-
+[Autoruns v12.02](https://blogs.technet.microsoft.com/sysinternals/2014/08/19/updates-autoruns-v12-02-coreinfo-v3-31-sysmon-v1-01-whois-v1-12/)
+>This fixes a bug that could cause Autoruns to crash on startup, updates the image path parsing for Installed Components to remove false positive file-not-found entries, and correctly reports image entry timestamps in local time instead of UTC.
 
 [Autoruns v12.01](https://blogs.technet.microsoft.com/sysinternals/2014/08/08/new-sysmon-v1-0-updates-autoruns-v12-01-coreinfo-v3-3-procexp-v16-03/)
 >This update to Autoruns, a utility that comes in Windows application and command-line forms, has numerous bug fixes, adds a profile attribute/column to CSV and XML output, and interprets the CodeBase value for COM object registrations.
 
- [Autoruns v12.0](https://blogs.technet.microsoft.com/sysinternals/2014/05/13/updates-autoruns-v12-0-procdump-v7-0/)
- >This release of Autoruns, a Windows application and command-line utility for viewing autostart entries, now reports the presence of batch file and executable image entries in the WMI database, a vector used by some types of malware.
+[Autoruns v12.0](https://blogs.technet.microsoft.com/sysinternals/2014/05/13/updates-autoruns-v12-0-procdump-v7-0/)
+>This release of Autoruns, a Windows application and command-line utility for viewing autostart entries, now reports the presence of batch file and executable image entries in the WMI database, a vector used by some types of malware.
  
- [Autoruns v11.70](https://blogs.technet.microsoft.com/sysinternals/2013/08/01/autoruns-v11-70-bginfo-v4-20-disk2vhd-v1-64-process-explorer-v15-40/)
- >This release of Autoruns, a powerful utility for scanning and disabling autostart code, adds a new option to have it show only per-user locations, something that is useful when analyzing the autostarts of different accounts than the one that Autoruns is running under.
+[Autoruns v11.70](https://blogs.technet.microsoft.com/sysinternals/2013/08/01/autoruns-v11-70-bginfo-v4-20-disk2vhd-v1-64-process-explorer-v15-40/)
+>This release of Autoruns, a powerful utility for scanning and disabling autostart code, adds a new option to have it show only per-user locations, something that is useful when analyzing the autostarts of different accounts than the one that Autoruns is running under.
 
 [Autoruns v11.62](https://blogs.technet.microsoft.com/sysinternals/2013/07/01/update-autoruns-v11-62/)
 >This release fixes a bug in version 11.61’s jump-to-image functionality.

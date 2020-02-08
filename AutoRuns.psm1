@@ -85,7 +85,7 @@ Function Get-PSAutorun {
         '*' can be used to indicate that all loaded user hives will be scanned.
 #>
 
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Pretty')]
     Param(
         [switch]$All,
         [Switch]$BootExecute,
@@ -104,7 +104,14 @@ Function Get-PSAutorun {
         [Switch]$ScheduledTasks,
         [Switch]$Winlogon,
         [Switch]$WMI,
+
+        [Parameter(ParameterSetName='Plain')]
+        [Switch]$Raw,
+
+        [Parameter(ParameterSetName='Pretty')]
         [Switch]$ShowFileHash,
+
+        [Parameter(ParameterSetName='Pretty')]
         [Switch]$VerifyDigitalSignature
     )
 DynamicParam  {
@@ -562,12 +569,13 @@ Begin {
             [Switch]$WMI,
             [Switch]$ShowFileHash,
             [Switch]$VerifyDigitalSignature,
+            [Switch]$Raw,
             [PSObject]$User=$Users
 
         )
         Begin {
             ## Add 'All' if nothing else was supplied
-            $parametersToIgnore = ("ShowFileHash","VerifyDigitalSignature",'User') +
+            $parametersToIgnore = ('ShowFileHash','VerifyDigitalSignature','User','Raw') +
                 [System.Management.Automation.PSCmdlet]::CommonParameters +
                 [System.Management.Automation.PSCmdlet]::OptionalCommonParameters
             if(($PSBoundParameters.Keys | Where-Object { $_ -notin $parametersToIgnore }).Count -eq 0)
@@ -1490,7 +1498,7 @@ Begin {
                     $arc = $_
                     'HKLM:',$Users.ForEach({ $_['Hive']}) | ForEach-Object {
                         $root = $_
-                        if (Test-Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office") {
+                        if (Test-Path -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office") {
                             (Get-Item "$($root)\SOFTWARE\$($arc)\Microsoft\Office").GetSubKeyNames() | ForEach-Object {
                                 if (Test-Path -Path (Join-Path -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office" -ChildPath "$($_)\Addins") -PathType Container) {
                                     $key = (Join-Path -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office" -ChildPath "$($_)\Addins")
@@ -1899,9 +1907,9 @@ Begin {
                                     break
                                 }
                                 # Windir\system32
-                                '^(%(w|W)in(d|D)ir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\.*\.(exe|vbs)' {
+                                '^"?(%(w|W)in(d|D)ir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\.*\.(exe|vbs)' {
                                     Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
-                                        @([regex]'^(%(w|W)in(d|D)ir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\(?<File>.*\.(exe|vbs))(\s)?').Matches($_) |
+                                        @([regex]'^"?(%(w|W)in(d|D)ir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\(?<File>.*\.(exe|vbs))("|\s)?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
@@ -1948,18 +1956,42 @@ Begin {
                                     )
                                     break
                                 }
-                                # ProgramFiles
-                                '^"?(C:\\Program\sFiles|%ProgramFiles%)\\' {
+                                # ProgramFiles starts with a quote
+                                '^"(C:\\Program\sFiles|%ProgramFiles%)\\' {
                                     Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
-                                        @([regex]'^"?(C:\\Program\sFiles|%ProgramFiles%)\\(?<File>.*\.[a-z0-9]{1,})("|\s)?').Matches($_) |
+                                          @([regex]'^"(C:\\Program\sFiles|%ProgramFiles%)\\(?<File>.+\.[A-Za-z0-9]{1,})"').Matches($_)|
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
                                 }
-                                # ProgramFilesx86
-                                '^"?(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\' {
+                                # ProgramFiles with no quote
+                                '^(C:\\Program\sFiles|%ProgramFiles%)\\' {
+                                    Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
+                                        @([regex]'^(C:\\Program\sFiles|%ProgramFiles%)\\(?<File>.*\.[A-Za-z0-9]{1,})\s?').Matches($_) |
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )
+                                    break
+                                }
+                                # ProgramFilesx86 starts with a quote
+                                '^"(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\' {
                                     Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
-                                        @([regex]'^"?(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\(?<File>.*\.[a-z0-9]{1,})("|\s)?').Matches($_) |
+                                        @([regex]'^"(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\(?<File>.*\.[a-z0-9]{1,})"').Matches($_) |
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )
+                                    break
+                                }
+                                # ProgramFilesx86 with no quote
+                                '^(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\' {
+                                    Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
+                                        @([regex]'^(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\(?<File>.*\.[a-z0-9]{1,})\s?').Matches($_) |
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )
+                                    break
+                                }
+                                # Users
+                                '^"?C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})("|\s)?' {
+                                    Join-Path -Path 'C:\Users' -ChildPath (
+                                        @([regex]'^"?C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})("|\s)?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
@@ -2291,6 +2323,14 @@ Begin {
                                         break
                                     }
                                     # C:\Users
+                                    '^"?C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})("|\s)?' {
+                                        Join-Path -Path 'C:\Users' -ChildPath (
+                                            @([regex]'^"?C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})("|\s)?').Matches($_) |
+                                            Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                        )
+                                        break
+                                    }
+                                    # "C:\
                                     '^"[A-Za-z]:\\' {
                                         ($_ -split '"')[1]
                                             break
@@ -2591,25 +2631,35 @@ Begin {
 
 }
 Process {
-    if ($PSBoundParameters.ContainsKey('ShowFileHash')) {
-        $GetHash = $true
-    } else {
-        $GetHash = $false
+    Switch ($PSCmdlet.ParameterSetName) {
+        'Plain' {
+            Get-PSRawAutoRun @PSBoundParameters
+            break
+        }
+        'Pretty' {
+            if ($PSBoundParameters.ContainsKey('ShowFileHash')) {
+                $GetHash = $true
+            } else {
+                $GetHash = $false
+            }
+            if ($PSBoundParameters.ContainsKey('VerifyDigitalSignature')) {
+                $GetSig = $true
+            } else {
+                $GetSig = $false
+            }
+            if ($PSBoundParameters.ContainsKey('User')) {
+                $null = $PSBoundParameters.Remove('User')
+            }
+            $PSBoundParameters.Add('User',$Users)
+            Get-PSRawAutoRun @PSBoundParameters |
+            Get-PSPrettyAutorun |
+            Add-PSAutoRunExtendedInfo |
+            Add-PSAutoRunHash -ShowFileHash:$GetHash |
+            Add-PSAutoRunAuthentiCodeSignature -VerifyDigitalSignature:$GetSig
+            break
+        }
+        default {}
     }
-    if ($PSBoundParameters.ContainsKey('VerifyDigitalSignature')) {
-        $GetSig = $true
-    } else {
-        $GetSig = $false
-    }
-    if ($PSBoundParameters.ContainsKey('User')) {
-        $null = $PSBoundParameters.Remove('User')
-    }
-    $PSBoundParameters.Add('User',$Users)
-    Get-PSRawAutoRun @PSBoundParameters |
-    Get-PSPrettyAutorun |
-    Add-PSAutoRunExtendedInfo |
-    Add-PSAutoRunHash -ShowFileHash:$GetHash |
-    Add-PSAutoRunAuthentiCodeSignature -VerifyDigitalSignature:$GetSig
 }
 End {}
 }
