@@ -1837,7 +1837,7 @@ Begin {
             }
             if ($All -or $PSProfiles) {
 
-                $profiles = New-Object -TypeName System.Collections.ArrayList 
+                $profiles = New-Object -TypeName System.Collections.ArrayList
                 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0',
                 'C:\Windows\System32\WindowsPowerShell\v1.0',
                 $global:home | ForEach-Object {
@@ -1848,13 +1848,13 @@ Begin {
                     $null = $profiles.Add($global:PSHOME) # for PS Core, use public constant
                 }
 
-                $profiles | 
+                $profiles |
                 ForEach-Object {
 
                     $root = $_
                     'profile.ps1',
                     'Microsoft.PowerShell_profile.ps1',
-                    'Microsoft.PowerShellISE_profile.ps1' | 
+                    'Microsoft.PowerShellISE_profile.ps1' |
                     ForEach-Object {
 
                         if (Test-Path -Path (Join-Path -Path $root -ChildPath $_) -PathType Leaf) {
