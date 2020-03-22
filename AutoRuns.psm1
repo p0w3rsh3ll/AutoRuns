@@ -2416,10 +2416,26 @@ Begin {
                                         )
                                         break
                                     }
-                                    # C:\Users
-                                    '^"?C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})("|\s)?' {
+                                    # C:\Users with a quote
+                                    '^"C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})"' {
                                         Join-Path -Path 'C:\Users' -ChildPath (
-                                            @([regex]'^"?C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})("|\s)?').Matches($_) |
+                                            @([regex]'^"C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})"').Matches($_) |
+                                            Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                        )
+                                        break
+                                    }
+                                    # C:\Users with a space at the end
+                                    '^C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})\s' {
+                                        Join-Path -Path 'C:\Users' -ChildPath (
+                                            @([regex]'^C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})\s').Matches($_) |
+                                            Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                        )
+                                        break
+                                    }
+                                    # C:\Users with nothing at the end
+                                    '^C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})' {
+                                        Join-Path -Path 'C:\Users' -ChildPath (
+                                            @([regex]'^C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                         )
                                         break
