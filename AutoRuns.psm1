@@ -1186,7 +1186,7 @@ Begin {
 
                 # LNK files or direct executable
                 if (Test-Path -Path "$($env:systemdrive)\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup" -PathType Container) {
-                    $Wsh = new-object -comobject 'WScript.Shell'
+                    $Wsh = New-Object -ComObject 'WScript.Shell'
                     Get-ChildItem -Path "$($env:systemdrive)\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup" |ForEach-Object {
                         $File = $_
                         $header = (Get-Content -Path $($_.FullName) -Encoding Byte -ReadCount 1 -TotalCount 2) -as [string]
@@ -1270,47 +1270,6 @@ Begin {
                 # Shell override by GPO
                 Get-RegValue -Path "$($Hive)\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name 'Shell' @Category
 
-                # LNK files or direct executable
-                # !!!! Adapt Appdata with profile path  !!!
-                if (Test-Path -Path "$($env:AppData)\Microsoft\Windows\Start Menu\Programs\Startup") {
-                    $Wsh = new-object -comobject 'WScript.Shell'
-                    Get-ChildItem -Path "$($env:AppData)\Microsoft\Windows\Start Menu\Programs\Startup" |ForEach-Object {
-                        $File = $_
-                        $header = (Get-Content -Path $($_.FullName) -Encoding Byte -ReadCount 1 -TotalCount 2) -as [string]
-                        Switch ($header) {
-                            '77 90' {
-                                [pscustomobject]@{
-                                    Path = "$($env:AppData)\Microsoft\Windows\Start Menu\Programs\Startup"
-                                    Item = $File.Name
-                                    Value = $File.FullName
-                                    Category = 'Logon'
-                                }
-                                break
-                            }
-                            '76 0' {
-                                $shortcut = $Wsh.CreateShortcut($File.FullName)
-                                [pscustomobject]@{
-                                    Path = "$($env:AppData)\Microsoft\Windows\Start Menu\Programs\Startup"
-                                    Item = $File.Name
-                                    Value = "$($shortcut.TargetPath) $($shortcut.Arguments)"
-                                    Category = 'Logon'
-                                }
-                                break
-
-                            }
-                            # Anything else: not lnk and not PE
-                            default {
-                                [pscustomobject]@{
-                                    Path = "$($env:AppData)\Microsoft\Windows\Start Menu\Programs\Startup"
-                                    Item = $File.Name
-                                    Value = $File.FullName
-                                    Category = 'Logon'
-                                }
-                            }
-                        }
-                    }
-                }
-
                 Get-RegValue -Path "$($Hive)\Software\Microsoft\Windows NT\CurrentVersion\Windows" -Name 'Load' @Category
                 Get-RegValue -Path "$($Hive)\Software\Microsoft\Windows NT\CurrentVersion\Windows" -Name 'Run' @Category
 
@@ -1358,6 +1317,70 @@ Begin {
                     }
                 }
                 Get-RegValue -Path "$($Hive)\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run" -Name '*' @Category
+
+                # Scan the User Shell Folders key and its startup non expanded value
+                $key = "$($Hive)\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+                if (Test-Path -Path $key -PathType Container) {
+                    $Wsh = New-Object -ComObject 'WScript.Shell'
+                    $regKey = '{0}\Startup' -f ($key -replace  ':','' -replace 'HKU','HKEY_USERS')
+                    [pscustomobject]@{
+                        Path = "$($key)"
+                        Item = 'Startup'
+                        Value = $Wsh.RegRead($regKey)
+                        Category = 'Logon'
+                    }
+                }
+                # Scan the Shell folders key and its startup value if they exist
+                $key = "$($Hive)\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+                if (Test-Path -Path $key -PathType Container) {
+                    # Show what the Startup value contains (could be a file)
+                    Get-RegValue -Path $key -Name 'Startup' @Category
+                    $USF = $null
+                    # If it's a folder, explore its content
+                    $USF = (Get-ItemProperty -Path $key -Name 'Startup' -ErrorAction SilentlyContinue).'StartUp'
+                    if ($USF) {
+                        if (Test-Path -Path "$($USF)") {
+                            $Wsh = New-Object -ComObject 'WScript.Shell'
+                            Get-ChildItem -Path "$($USF)" -Force -Exclude 'desktop.ini' |
+                            ForEach-Object {
+                                $File = $_
+                                $header = (Get-Content -Path $($_.FullName) -Encoding Byte -ReadCount 1 -TotalCount 2) -as [string]
+                                Switch ($header) {
+                                    '77 90' {
+                                        [pscustomobject]@{
+                                            Path = "$($USF)"
+                                            Item = $File.Name
+                                            Value = $File.FullName
+                                            Category = 'Logon'
+                                        }
+                                        break
+                                    }
+                                    '76 0' {
+                                        $shortcut = $Wsh.CreateShortcut($File.FullName)
+                                        [pscustomobject]@{
+                                            Path = "$($USF)"
+                                            Item = $File.Name
+                                            Value = "$($shortcut.TargetPath) $($shortcut.Arguments)"
+                                            Category = 'Logon'
+                                        }
+                                        break
+
+                                    }
+                                    # Anything else: not lnk and not PE
+                                    default {
+                                        [pscustomobject]@{
+                                            Path = "$($USF)"
+                                            Item = $File.Name
+                                            Value = $File.FullName
+                                            Category = 'Logon'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 }
                 #endregion User Logon
 
@@ -1504,7 +1527,7 @@ Begin {
                     'HKLM:',$Users.ForEach({ $_['Hive']}) | ForEach-Object {
                         $root = $_
                         if (Test-Path -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office") {
-                            (Get-Item "$($root)\SOFTWARE\$($arc)\Microsoft\Office").GetSubKeyNames() | ForEach-Object {
+                            (Get-Item -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office").GetSubKeyNames() | ForEach-Object {
                                 if (Test-Path -Path (Join-Path -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office" -ChildPath "$($_)\Addins") -PathType Container) {
                                     $key = (Join-Path -Path "$($root)\SOFTWARE\$($arc)\Microsoft\Office" -ChildPath "$($_)\Addins")
                                     # Iterate through the Addins names
@@ -1837,7 +1860,7 @@ Begin {
             }
             if ($All -or $PSProfiles) {
 
-                $profiles = New-Object -TypeName System.Collections.ArrayList 
+                $profiles = New-Object -TypeName System.Collections.ArrayList
                 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0',
                 'C:\Windows\System32\WindowsPowerShell\v1.0',
                 $global:home | ForEach-Object {
@@ -1848,13 +1871,13 @@ Begin {
                     $null = $profiles.Add($global:PSHOME) # for PS Core, use public constant
                 }
 
-                $profiles | 
+                $profiles |
                 ForEach-Object {
 
                     $root = $_
                     'profile.ps1',
                     'Microsoft.PowerShell_profile.ps1',
-                    'Microsoft.PowerShellISE_profile.ps1' | 
+                    'Microsoft.PowerShellISE_profile.ps1' |
                     ForEach-Object {
 
                         if (Test-Path -Path (Join-Path -Path $root -ChildPath $_) -PathType Leaf) {
@@ -1927,10 +1950,43 @@ Begin {
                                 }
                                 # special powershell
                                 '[pP][oO][wW][eE][rR][sS][hH][eE][lL]{2}' {
+                                    Function Get-EnvReplacement {
+                                    [CmdletBinding()]
+                                    Param(
+                                    [Parameter(Mandatory,ValueFromPipeline)]
+                                    [string]$Value
+                                    )
+                                    Begin {}
+                                    Process {}
+                                    End {
+                                        $envVar= ($Value -split '%')[1]
+                                        # Write-Verbose -Message "-$($envVar)-" -Verbose
+                                        if ($envVar) {
+                                            Get-ChildItem -Path 'Env:' | Where-Object {$_.Name -eq "$($envVar)"} |
+                                            ForEach-Object {
+                                                if ($Value -match "$($_.Name)") {
+                                                    $Value -replace "%$($_.Name)%","$($_.Value)"
+                                                }
+                                            }
+                                        } else {
+                                            $Value
+                                        }
+                                    }
+                                    }
                                     switch -regex ($_) {
                                         '\s-[fF]' {
                                             @([regex]'(-[fF][iI]?[lL]?[eE]?)\s{1,}?"?(?<File>.+\.[pP][sS]1)"?\s?').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value | ForEach-Object  { ($_ -replace '"','').Trim()}
+                                            break
+                                        }
+                                        '.[pP][sS]1\s' {
+                                            @([regex]'([^\s]+)(?<=\.[pP][sS]1)').Matches($_) |
+                                            Select-Object -Expand Groups | Select-Object -Last 1 -ExpandProperty Value | Get-EnvReplacement
+                                            break
+                                        }
+                                        '.[pP][sS]1"' {
+                                            @([regex]'([^"]+)(?<=\.[pP][sS]1)').Matches($_) |
+                                            Select-Object -Expand Groups | Select-Object -Last 1 -ExpandProperty Value | Get-EnvReplacement
                                             break
                                         }
                                         '.[pP][sS]1' {
