@@ -1590,6 +1590,20 @@ Begin {
 		            Get-RegValue -Path "$key\$($_)" -Name 'Name' @Category
 	            }
 
+                Write-Verbose -Message 'Looking for Print Ports entries'
+                $key = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Ports'
+                if (Test-Path -Path $key -PathType Container) {
+                    (Get-Item -Path $key).GetValueNames() | Where-Object -FilterScript {
+                        $_ -notmatch '^(COM|LPT|PORTPROMPT|FILE|nul|Ne)(\d{1,2})?:'
+	                } | ForEach-Object -Process {
+                        [pscustomobject]@{
+	                        Path = $key
+	                        Item = 'Port'
+	                        Value = "$($_)"
+	                        Category = 'Print Monitors'
+	                    }
+                    }
+                }
                 #endregion Print monitors
             }
             if ($All -or $LSAsecurityProviders) {
