@@ -76,10 +76,9 @@ Function        Get-PSAutorun                                      13.95      Au
 Get-Command Get-PSAutorun -Syntax
 ```
 ```
-Get-PSAutorun [-All] [-BootExecute] [-AppinitDLLs] [-ExplorerAddons] [-SidebarGadgets] [-ImageHijacks]
-[-InternetExplorerAddons] [-KnownDLLs] [-Logon] [-Winsock] [-Codecs] [-OfficeAddins] 
-[-PrintMonitorDLLs] [-LSAsecurityProviders] [-ServicesAndDrivers] [-ScheduledTasks] [-Winlogon] 
-[-WMI] [-ShowFileHash] [-VerifyDigitalSignature] [-User <string>] [<CommonParameters>]
+Get-PSAutorun [-All] [-BootExecute] [-AppinitDLLs] [-ExplorerAddons] [-ImageHijacks] [-InternetExplorerAddons] [-KnownDLLs] [-Logon] [-Winsock] [-Codecs] [-OfficeAddins] [-PrintMonitorDLLs] [-LSAsecurityProviders] [-ServicesAndDrivers] [-ScheduledTasks] [-Winlogon] [-WMI] [-PSProfiles] [-ShowFileHash] [-VerifyDigitalSignature] [-User <string>] [<CommonParameters>]
+
+Get-PSAutorun [-All] [-BootExecute] [-AppinitDLLs] [-ExplorerAddons] [-ImageHijacks] [-InternetExplorerAddons] [-KnownDLLs] [-Logon] [-Winsock] [-Codecs] [-OfficeAddins] [-PrintMonitorDLLs] [-LSAsecurityProviders] [-ServicesAndDrivers] [-ScheduledTasks] [-Winlogon] [-WMI] [-PSProfiles] [-Raw] [-User <string>] [<CommonParameters>]
 ```
 
 ### View examples provided in the help

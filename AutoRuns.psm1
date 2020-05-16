@@ -1590,6 +1590,20 @@ Begin {
 		            Get-RegValue -Path "$key\$($_)" -Name 'Name' @Category
 	            }
 
+                Write-Verbose -Message 'Looking for Print Ports entries'
+                $key = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Ports'
+                if (Test-Path -Path $key -PathType Container) {
+                    (Get-Item -Path $key).GetValueNames() | Where-Object -FilterScript {
+                        $_ -notmatch '^(COM|LPT|PORTPROMPT|FILE|nul|Ne)(\d{1,2})?:'
+	                } | ForEach-Object -Process {
+                        [pscustomobject]@{
+	                        Path = $key
+	                        Item = 'Port'
+	                        Value = "$($_)"
+	                        Category = 'Print Monitors'
+	                    }
+                    }
+                }
                 #endregion Print monitors
             }
             if ($All -or $LSAsecurityProviders) {
@@ -2416,10 +2430,26 @@ Begin {
                                         )
                                         break
                                     }
-                                    # C:\Users
-                                    '^"?C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})("|\s)?' {
+                                    # C:\Users with a quote
+                                    '^"C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})"' {
                                         Join-Path -Path 'C:\Users' -ChildPath (
-                                            @([regex]'^"?C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})("|\s)?').Matches($_) |
+                                            @([regex]'^"C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})"').Matches($_) |
+                                            Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                        )
+                                        break
+                                    }
+                                    # C:\Users with a space at the end
+                                    '^C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})\s' {
+                                        Join-Path -Path 'C:\Users' -ChildPath (
+                                            @([regex]'^C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})\s').Matches($_) |
+                                            Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                        )
+                                        break
+                                    }
+                                    # C:\Users with nothing at the end
+                                    '^C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})' {
+                                        Join-Path -Path 'C:\Users' -ChildPath (
+                                            @([regex]'^C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                         )
                                         break
