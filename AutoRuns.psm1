@@ -2504,7 +2504,15 @@ Begin {
                     }
                     'Print Monitors' {
                         $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value $(
-                            Join-Path -Path "$($env:SystemRoot)\System32" -ChildPath $Item.Value
+                            switch -Regex ($Item.Value) {
+                                '^"?[A-Za-z]:\\' {
+                                    $Item.Value
+                                }
+                                default {
+                                    Join-Path -Path "$($env:SystemRoot)\System32" -ChildPath $Item.Value
+                                }
+                            }
+
                         ) -Force -PassThru
                         break
                     }
