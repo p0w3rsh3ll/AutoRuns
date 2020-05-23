@@ -1,4 +1,4 @@
-﻿#Requires -Version 3.0
+﻿#Requires -Version 4.0
 
 Function Get-PSAutorun {
 <#
