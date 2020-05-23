@@ -43,7 +43,7 @@ InModuleScope FakeAutoRuns {
 
 Describe 'Testing Get-PSPrettyAutorun for Print Monitors' {
 
-    #  Fix the ImagePath of Printer port #74 
+    #  Fix the ImagePath of Printer port #74
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/74
     It 'issue 74 should be solved' {
         Mock -CommandName Get-PSRawAutoRun -MockWith {
@@ -55,7 +55,7 @@ Describe 'Testing Get-PSPrettyAutorun for Print Monitors' {
             }
         } -ParameterFilter { $PrintMonitorDLLs -eq [switch]::Present }
         $i = (Get-PSRawAutoRun -PrintMonitorDLLs | Get-PSPrettyAutorun).ImagePath
-        $i -ceq 'C:\windows\tracing\myport.txt' | should be $true    
+        $i -ceq 'C:\windows\tracing\myport.txt' | should be $true
     }
 }
 #endregion
