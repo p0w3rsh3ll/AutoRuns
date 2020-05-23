@@ -137,7 +137,8 @@ gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessin
 - [ ] Write Pester tests for this module
 
 #### OS and Software compatibility
-- [x] Test the module in PowerShell Core 6.0.0
+- [x] Test the module in PowerShell Core 6.x (latest)
+- [x] Test the module in PowerShell Core 7.x (latest)
 - [ ] Test the module on Nano and get rid of Add-Member cmdlet
 - [ ] Test the module on various versions of Windows 10
 - [ ] Test the module on Windows RT
