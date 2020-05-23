@@ -1116,12 +1116,21 @@ Begin {
                     }
                 }
 
+                if ($PSVersionTable.PSEdition -ne 'Core') {
+                    $HT = @{
+                        Encoding = 'Byte'
+                    }
+                } else {
+                    $HT = @{
+                        AsByteStream = [switch]::Present
+                    }
+                }
                 # LNK files or direct executable
                 if (Test-Path -Path "$($env:systemdrive)\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup" -PathType Container) {
                     $Wsh = New-Object -ComObject 'WScript.Shell'
                     Get-ChildItem -Path "$($env:systemdrive)\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup" |ForEach-Object {
                         $File = $_
-                        $header = (Get-Content -Path $($_.FullName) -Encoding Byte -ReadCount 1 -TotalCount 2) -as [string]
+                        $header = (Get-Content -Path $($_.FullName) @HT -ReadCount 1 -TotalCount 2) -as [string]
                         Switch ($header) {
                             '77 90' {
                                 [pscustomobject]@{
@@ -1276,7 +1285,7 @@ Begin {
                             Get-ChildItem -Path "$($USF)" -Force -Exclude 'desktop.ini' |
                             ForEach-Object {
                                 $File = $_
-                                $header = (Get-Content -Path $($_.FullName) -Encoding Byte -ReadCount 1 -TotalCount 2) -as [string]
+                                $header = (Get-Content -Path $($_.FullName) @HT -ReadCount 1 -TotalCount 2) -as [string]
                                 Switch ($header) {
                                     '77 90' {
                                         [pscustomobject]@{
