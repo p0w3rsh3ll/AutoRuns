@@ -173,6 +173,7 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 ```
 
 <a name="AutorunsDoc"/>
+
 ## Other links
 
 [https://live.sysinternals.com](https://live.sysinternals.com/)
