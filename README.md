@@ -11,6 +11,7 @@
 * [Issues](#issues)
 * [Todo](#Todo)
 * [Credits](#Credits)
+* [Original Autoruns doc](#AutorunsDoc)
 * [Original Autoruns.exe release history](#AutorunsHistory)
 
 <a name="Usage"/>
@@ -171,9 +172,19 @@ Thanks go to:
 Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 ```
 
+<a name="AutorunsDoc"/>
+## Other links
+
+[https://live.sysinternals.com](https://live.sysinternals.com/)
+[https://docs.microsoft.com/en-us/sysinternals](https://docs.microsoft.com/en-us/sysinternals/)
+[https://docs.microsoft.com/en-us/archive/blogs/sysinternals](https://docs.microsoft.com/en-us/archive/blogs/sysinternals/)
+
 <a name="AutorunsHistory"/>
 
 ## Original [Autoruns.exe](https://docs.microsoft.com/en-us/sysinternals/downloads/autoruns) from Mark Russinovich
+
+[Autoruns v13.98](https://techcommunity.microsoft.com/t5/sysinternals-blog/sysmon-v11-10-sigcheck-v2-80-autoruns-v13-98/ba-p/1485287)
+>This release of Autoruns resolves an issue where Microsoft Defender binaries were being flagged as unsigned.
 
 [Autoruns v13.95](https://blogs.technet.microsoft.com/sysinternals/2019/06/12/sysmon-v10-0-autoruns-v13-95-vmmap-v3-26/)
 >This Autoruns update adds support for user Shell folders redirections.
