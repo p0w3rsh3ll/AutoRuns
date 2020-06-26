@@ -176,9 +176,9 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 
 ## Other links
 
-[https://live.sysinternals.com](https://live.sysinternals.com/)
-[https://docs.microsoft.com/en-us/sysinternals](https://docs.microsoft.com/en-us/sysinternals/)
-[https://docs.microsoft.com/en-us/archive/blogs/sysinternals](https://docs.microsoft.com/en-us/archive/blogs/sysinternals/)
+- [https://live.sysinternals.com](https://live.sysinternals.com/)
+- [https://docs.microsoft.com/en-us/sysinternals](https://docs.microsoft.com/en-us/sysinternals/)
+- [https://docs.microsoft.com/en-us/archive/blogs/sysinternals](https://docs.microsoft.com/en-us/archive/blogs/sysinternals/)
 
 <a name="AutorunsHistory"/>
 
