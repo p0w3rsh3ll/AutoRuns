@@ -11,6 +11,7 @@
 * [Issues](#issues)
 * [Todo](#Todo)
 * [Credits](#Credits)
+* [Original Autoruns doc](#AutorunsDoc)
 * [Original Autoruns.exe release history](#AutorunsHistory)
 
 <a name="Usage"/>
@@ -28,7 +29,7 @@ Find-Module -Name Autoruns -Repository PSGallery
 ```
 Version    Name                                Repository           Description
 -------    ----                                ----------           -----------                                   
-13.95.2    AutoRuns                            PSGallery            AutoRuns is a module ...
+13.98      AutoRuns                            PSGallery            AutoRuns is a module ...
 ```
 
 ```powershell
@@ -41,8 +42,8 @@ Stop and please review the content of the module, I mean the code to make sure i
 You can also verify that the SHA256 hashes of downloaded files match those stored in the catalog file
 ```powershell
 $HT = @{
-    CatalogFilePath = "~/Downloads/AutoRuns/13.95.2/AutoRuns.cat"
-    Path = "~/Downloads/AutoRuns/13.95.2"
+    CatalogFilePath = "~/Downloads/AutoRuns/13.98/AutoRuns.cat"
+    Path = "~/Downloads/AutoRuns/13.98"
     Detailed = $true
     FilesToSkip = 'PSGetModuleInfo.xml'
 }
@@ -51,7 +52,7 @@ Test-FileCatalog @HT
 
 ```powershell
 # Import the module
-Import-Module ~/Downloads/AutoRuns/13.95.2/AutoRuns.psd1 -Force -Verbose
+Import-Module ~/Downloads/AutoRuns/13.98/AutoRuns.psd1 -Force -Verbose
 ```
 
 <a name="Functions"/>
@@ -63,7 +64,7 @@ Get-Command -Module AutoRuns
 ```
 CommandType     Name                                               Version    Source
 -----------     ----                                               -------    ------
-Function        Get-PSAutorun                                      13.95.2    AutoRuns
+Function        Get-PSAutorun                                      13.98      AutoRuns
 ```
 
 
@@ -137,7 +138,8 @@ gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessin
 - [ ] Write Pester tests for this module
 
 #### OS and Software compatibility
-- [x] Test the module in PowerShell Core 6.0.0
+- [x] Test the module in PowerShell Core 6.x (latest)
+- [x] Test the module in PowerShell Core 7.x (latest)
 - [ ] Test the module on Nano and get rid of Add-Member cmdlet
 - [ ] Test the module on various versions of Windows 10
 - [ ] Test the module on Windows RT
@@ -170,9 +172,20 @@ Thanks go to:
 Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 ```
 
+<a name="AutorunsDoc"/>
+
+## Other links
+
+- [https://live.sysinternals.com](https://live.sysinternals.com/)
+- [https://docs.microsoft.com/en-us/sysinternals](https://docs.microsoft.com/en-us/sysinternals/)
+- [https://docs.microsoft.com/en-us/archive/blogs/sysinternals](https://docs.microsoft.com/en-us/archive/blogs/sysinternals/)
+
 <a name="AutorunsHistory"/>
 
 ## Original [Autoruns.exe](https://docs.microsoft.com/en-us/sysinternals/downloads/autoruns) from Mark Russinovich
+
+[Autoruns v13.98](https://techcommunity.microsoft.com/t5/sysinternals-blog/sysmon-v11-10-sigcheck-v2-80-autoruns-v13-98/ba-p/1485287)
+>This release of Autoruns resolves an issue where Microsoft Defender binaries were being flagged as unsigned.
 
 [Autoruns v13.95](https://blogs.technet.microsoft.com/sysinternals/2019/06/12/sysmon-v10-0-autoruns-v13-95-vmmap-v3-26/)
 >This Autoruns update adds support for user Shell folders redirections.

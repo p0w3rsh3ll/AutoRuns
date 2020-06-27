@@ -1,4 +1,4 @@
-﻿#Requires -Version 3.0
+﻿#Requires -Version 4.0
 
 Function Get-PSAutorun {
 <#
@@ -219,74 +219,6 @@ Begin {
     #endregion
     #region Helperfunctions
 
-    if ($PSVersionTable.PSEdition -ne 'Core') {
-    # Courtesy of Microsoft
-    # Extracted from PS 4.0 with (dir function:\Get-FileHash).Definition
-    Function Get-FileHash {
-        [CmdletBinding(DefaultParameterSetName = 'Path')]
-        Param(
-            [Parameter(Mandatory, ParameterSetName='Path', Position = 0)]
-            [System.String[]]
-            $Path,
-
-            [Parameter(Mandatory, ParameterSetName='LiteralPath', ValueFromPipelineByPropertyName = $true)]
-            [Alias('PSPath')]
-            [System.String[]]
-            $LiteralPath,
-
-            [ValidateSet('SHA1', 'SHA256', 'SHA384', 'SHA512', 'MACTripleDES', 'MD5', 'RIPEMD160')]
-            [System.String]
-            $Algorithm='SHA256'
-        )
-
-        Begin {
-            # Construct the strongly-typed crypto object
-            $hasher = [System.Security.Cryptography.HashAlgorithm]::Create($Algorithm)
-        }
-        Process {
-            $pathsToProcess = @()
-
-            if($PSCmdlet.ParameterSetName  -eq 'LiteralPath') {
-                $pathsToProcess += Resolve-Path -LiteralPath $LiteralPath | Foreach-Object ProviderPath
-            } else {
-                $pathsToProcess += Resolve-Path $Path | Foreach-Object ProviderPath
-            }
-
-            foreach($filePath in $pathsToProcess) {
-                if(Test-Path -LiteralPath $filePath -PathType Container) {
-                    continue
-                }
-
-                try {
-                    # Read the file specified in $FilePath as a Byte array
-                    [system.io.stream]$stream = [system.io.file]::OpenRead($FilePath)
-
-                    # Compute file-hash using the crypto object
-                    [Byte[]] $computedHash = $hasher.ComputeHash($stream)
-                } catch [Exception] {
-                    $errorMessage = [Microsoft.PowerShell.Commands.UtilityResources]::FileReadError -f $FilePath, $_
-                    Write-Error -Message $errorMessage -Category ReadError -ErrorId 'FileReadError' -TargetObject $FilePath
-                    return
-                } finally {
-                    if($stream) {
-                        $stream.Close()
-                    }
-                }
-
-                # Convert to hex-encoded string
-                [string] $hash = [BitConverter]::ToString($computedHash) -replace '-',''
-
-                $retVal = [PSCustomObject] @{
-                    Algorithm = $Algorithm.ToUpperInvariant()
-                    Hash = $hash
-                    Path = $filePath
-                }
-                $retVal.psobject.TypeNames.Insert(0, 'Microsoft.Powershell.Utility.FileHash')
-                $retVal
-            }
-        }
-    }
-    }
     Function Get-RegValue {
     [CmdletBinding()]
     Param(
@@ -1184,12 +1116,21 @@ Begin {
                     }
                 }
 
+                if ($PSVersionTable.PSEdition -ne 'Core') {
+                    $HT = @{
+                        Encoding = 'Byte'
+                    }
+                } else {
+                    $HT = @{
+                        AsByteStream = [switch]::Present
+                    }
+                }
                 # LNK files or direct executable
                 if (Test-Path -Path "$($env:systemdrive)\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup" -PathType Container) {
                     $Wsh = New-Object -ComObject 'WScript.Shell'
                     Get-ChildItem -Path "$($env:systemdrive)\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup" |ForEach-Object {
                         $File = $_
-                        $header = (Get-Content -Path $($_.FullName) -Encoding Byte -ReadCount 1 -TotalCount 2) -as [string]
+                        $header = (Get-Content -Path $($_.FullName) @HT -ReadCount 1 -TotalCount 2) -as [string]
                         Switch ($header) {
                             '77 90' {
                                 [pscustomobject]@{
@@ -1344,7 +1285,7 @@ Begin {
                             Get-ChildItem -Path "$($USF)" -Force -Exclude 'desktop.ini' |
                             ForEach-Object {
                                 $File = $_
-                                $header = (Get-Content -Path $($_.FullName) -Encoding Byte -ReadCount 1 -TotalCount 2) -as [string]
+                                $header = (Get-Content -Path $($_.FullName) @HT -ReadCount 1 -TotalCount 2) -as [string]
                                 Switch ($header) {
                                     '77 90' {
                                         [pscustomobject]@{

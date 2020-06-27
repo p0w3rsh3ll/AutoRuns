@@ -4,7 +4,7 @@
 RootModule = 'AutoRuns.psm1'
 
 # Version number of this module.
-ModuleVersion = '13.95.2'
+ModuleVersion = '13.98'
 
 # ID used to uniquely identify this module
 GUID = '5df29b51-5627-43f6-bcae-a07a62887a2f'
@@ -19,7 +19,7 @@ Copyright = 'BSD 3-Clause'
 Description = 'AutoRuns is a module that will help do live incident response and enumerate autoruns artifacts that may be used by legitimate programs as well as malware to achieve persistence'
 
 # Minimum version of the Windows PowerShell engine required by this module
-PowerShellVersion = '3.0'
+PowerShellVersion = '4.0'
 
 # Minimum version of Microsoft .NET Framework required by this module
 # DotNetFrameworkVersion = '4.0'
