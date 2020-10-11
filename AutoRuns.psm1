@@ -2658,7 +2658,7 @@ Begin {
             $RawAutoRun | ForEach-Object {
                 If ($VerifyDigitalSignature) {
                     if ($_.ImagePath) {
-                        If (Test-Path -Path $_.ImagePath -PathType Leaf) {
+                        If (Test-Path -Path $_.ImagePath -PathType Leaf -ErrorAction SilentlyContinue) {
 
                             ## Add the signature status to the entry
                             $signature = Get-AuthenticodeSignature -FilePath $_.ImagePath -ErrorAction Stop
