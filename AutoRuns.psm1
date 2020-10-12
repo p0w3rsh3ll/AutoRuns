@@ -2618,7 +2618,7 @@ Begin {
             $RawAutoRun | ForEach-Object {
                 If ($ShowFileHash) {
                     if ($_.ImagePath) {
-                        If (Test-Path -Path $($_.ImagePath) -PathType Leaf) {
+                        If (Test-Path -Path $($_.ImagePath) -PathType Leaf -ErrorAction SilentlyContinue) {
                             $_ | Add-Member -MemberType NoteProperty -Name MD5 -Value $(
                                 (Get-FileHash -Path $($_.ImagePath) -Algorithm MD5).Hash
                             ) -Force -PassThru |
