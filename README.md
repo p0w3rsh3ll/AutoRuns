@@ -142,6 +142,13 @@ gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessin
 - [x] Test the module in PowerShell Core 7.x (latest)
 - [ ] Test the module on Nano and get rid of Add-Member cmdlet
 - [ ] Test the module on various versions of Windows 10
+  - [x] 1709
+  - [x] 1803
+  - [x] 1809
+  - [x] 1903
+  - [x] 1909
+  - [x] 2004
+  - [ ] 20H2
 - [ ] Test the module on Windows RT
 - [ ] Review Office Add-ins code with Office x86 and x64 versions
 
@@ -153,13 +160,15 @@ gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessin
 - [x] Replace HKCU and add an option to specify what user hive is being investigated
 - [ ] Add timestamps on registry keys
 - [ ] Analyze an offline image of Windows
+- [ ] Create a baseline of artifacts
+- [ ] Compare two baselines of artifacts
 
 #### Help
 - [ ] More examples
 - [ ] Use external help? 
 - [ ] Internationalization?
-- [ ] Copy the commetented changelog at the end of the module in README.md
-- [ ] Document issues and write a pester tests to validate the module behavior if fixed
+- [ ] Copy the changelog at the end of the module in README.md
+- [x] Document issues and write a pester tests to validate the module behavior if fixed
 
 <a name="Credits"/>
 
