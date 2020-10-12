@@ -81,6 +81,22 @@ Describe 'Testing ScheduledTasks' {
         }
     }
 
+    Context 'Inside Add-PSAutoRunAuthentiCodeSignature' {
+        It 'issue 82 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path = 'C:\WINDOWS\system32\Tasks\\ConfigAppIdSvc'
+                    Item = 'ConfigAppIdSvc'
+                    Category = 'Task'
+                    Value = 'whatever'
+                    # ImagePath = '-Command "& ''C:\Users\username\Documents\script.ps1'
+                    ImagePath = 'C:\Windows\system32\WindowsPowerShell\v1.0\powershell.exe -Exec Bypass -Command "Set-Service -Name AppIDSvc -StartupType Automatic"'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+
+            { Get-PSRawAutoRun -ScheduledTasks | Add-PSAutoRunAuthentiCodeSignature -VerifyDigitalSignature -ErrorAction Stop } | should not throw
+        }
+    }
 # Emulate what Get-PSRawAutoRun -ScheduledTasks returns & pass it to Get-PSPrettyAutorun
 
     Context 'Inside Get-PSRawAutoRun' {
