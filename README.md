@@ -22,8 +22,10 @@
 
 ### Install the module
 
+The module is located on the [PowerShellGallery](https://www.powershellgallery.com/packages/AutoRuns)
+
 ```powershell
-# Check the mmodule on powershellgallery.com
+# Check the module on powershellgallery.com using PowerShellGet cmdlets
 Find-Module -Name Autoruns -Repository PSGallery
 ```
 ```
