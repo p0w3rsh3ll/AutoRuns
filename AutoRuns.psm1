@@ -2850,7 +2850,7 @@ Process {
         Write-Verbose -Message "Item: $($Item)"
         $properties |
         ForEach-Object -Begin {
-            '[PSCustomObject]@{'
+            ' [PSCustomObject]@{'
         } -Process {
             $p = $_
             Write-Verbose -Message "Dealing with $($p)"
@@ -2858,41 +2858,41 @@ Process {
                 Switch ($Item.$p) {
                     {$_ -is [string]} {
                         Write-Verbose -Message "Its value $($Item.$p) is a String"                      
-                        "{0}='{1}'" -f $p,[Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($Item.$p)
+                        "  {0}='{1}'" -f $p,[Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($Item.$p)
                         break
                     }
                     {$_ -eq [string]::Empty} {
                         Write-Verbose -Message "Its value $($Item.$p) is an empty String"
-                        "{0}=''" -f $p
+                        "  {0}=''" -f $p
 
                         break
                     }
                     {$_ -is [long]} {
                         Write-Verbose -Message "Its value $($Item.$p) is an Long"
-                        '{0}=[long]{1}' -f $p,$Item.$p
+                        '  {0}=[long]{1}' -f $p,$Item.$p
                         break
                     }
                     {$_ -is [DateTime]} {
                         Write-Verbose -Message "Its value $($Item.$p) is a DateTime"
-                        '{0}=[datetime]{1} # {2}' -f $p,$Item.$p.Ticks,$Item.$p.ToString('u')
+                        '  {0}=[datetime]{1} # {2}' -f $p,$Item.$p.Ticks,$Item.$p.ToString('u')
                         break
                     }
                     {$_ -is [bool]} {
                         Write-Verbose -Message "Its value $($Item.$p) is a Boolean"
-                        "{0}=[bool]'{1}'" -f $p,$Item.$p
+                        "  {0}=[bool]'{1}'" -f $p,$Item.$p
                     }
                     default   {
                         Write-Warning -Message "Shouldn't be here for $($p) = $($Item.$p)"
                     }
                 }
             } else {
-                '{0}=$null' -f $p
+                '  {0}=$null' -f $p
             }
         } -End {
             if ($NoEnd) {
-                '}'
+                ' }'
             } else {
-                '},'
+                ' },'
             }
         }
     }
