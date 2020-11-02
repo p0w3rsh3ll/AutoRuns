@@ -28,7 +28,7 @@ PowerShellVersion = '4.0'
 # CLRVersion = '4.0'
 
 # Functions to export from this module
-FunctionsToExport = @('Get-PSAutorun')
+FunctionsToExport = @('Get-PSAutorun','New-AutoRunsBaseLine','Compare-AutoRunsBaseLine')
 # FunctionsToExport = '*'
 
 PrivateData = @{
