@@ -2857,9 +2857,8 @@ Process {
             if ($null -ne $Item.$p) {
                 Switch ($Item.$p) {
                     {$_ -is [string]} {
-                        Write-Verbose -Message "Its value $($Item.$p) is a String"
-                        $v = $Item.$p
-                        "{0}='{1}'" -f, $p,[Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($v)
+                        Write-Verbose -Message "Its value $($Item.$p) is a String"                      
+                        "{0}='{1}'" -f $p,[Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($Item.$p)
                         break
                     }
                     {$_ -eq [string]::Empty} {
