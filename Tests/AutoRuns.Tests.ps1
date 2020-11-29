@@ -601,6 +601,20 @@ Describe 'Testing Get-PSPrettyAutorun for WMI' {
 
 Describe 'Testing Get-PSPrettyAutorun for Logon' {
 
+    It 'issue 84 should be solved' {
+        Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKCU:\Software\\Microsoft\Windows\CurrentVersion\Run'
+                Item     = 'Discord'
+                Category = 'Logon'
+                Value    = 'C:\ProgramData\Etienne\Discord\app-0.0.0\Discord.exe'
+            }
+        } -ParameterFilter { $Logon -eq [switch]::Present }
+        $i = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun).ImagePath
+        # Write-Verbose -Message "#$($i)#" -Verbose
+        $i -eq 'C:\ProgramData\Etienne\Discord\app-0.0.0\Discord.exe' | should be $true
+    }
+
     # fake teams.exe with no quote or space
     It 'issue 70 bis should be solved' {
         Mock -CommandName Get-PSRawAutoRun -MockWith {
