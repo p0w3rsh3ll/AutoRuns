@@ -2400,6 +2400,13 @@ Begin {
                                         ($_ -split '"')[1]
                                             break
                                     }
+                                    # C:\ProgramData\
+                                    '^[A-Za-z]:\\ProgramData\\' {
+                                        Join-Path -Path 'C:\ProgramData' -ChildPath (
+                                            @([regex]'C:\\[pP][rR][oO][gG][rR][aA][mM][dD][aA][tT][aA]\\(?<File>.+\.[A-Za-z0-9]{1,})').Matches($_) |
+                                            Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                        )
+                                    }
                                     default {
                                         Write-Verbose -Message "default: $_"
                                         [string]::Empty
