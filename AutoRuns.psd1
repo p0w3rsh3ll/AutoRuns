@@ -35,8 +35,6 @@ PrivateData = @{
 
     PSData = @{
 
-        Prerelease = 'preview'
-
         # Tags applied to this module. These help with module discovery in online galleries.
         Tags = @('security','defense','PSEdition_Core','PSEdition_Desktop')
 
