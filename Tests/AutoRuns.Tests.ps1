@@ -64,6 +64,39 @@ Describe 'Testing Get-PSPrettyAutorun for Print Monitors' {
 
 Describe 'Testing ScheduledTasks' {
 
+    Context 'Inside Add-PSAutoRunHash' {
+        It 'issue 80 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path = 'C:\WINDOWS\system32\Tasks\\ConfigAppIdSvc'
+                    Item = 'ConfigAppIdSvc'
+                    Category = 'Task'
+                    Value = 'whatever'
+                    # ImagePath = '-Command "& ''C:\Users\username\Documents\script.ps1'
+                    ImagePath = 'C:\Windows\system32\WindowsPowerShell\v1.0\powershell.exe -Exec Bypass -Command "Set-Service -Name AppIDSvc -StartupType Automatic"'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+
+            { Get-PSRawAutoRun -ScheduledTasks | Add-PSAutoRunHash -ShowFileHash -ErrorAction Stop } | should not throw
+        }
+    }
+
+    Context 'Inside Add-PSAutoRunAuthentiCodeSignature' {
+        It 'issue 82 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path = 'C:\WINDOWS\system32\Tasks\\ConfigAppIdSvc'
+                    Item = 'ConfigAppIdSvc'
+                    Category = 'Task'
+                    Value = 'whatever'
+                    # ImagePath = '-Command "& ''C:\Users\username\Documents\script.ps1'
+                    ImagePath = 'C:\Windows\system32\WindowsPowerShell\v1.0\powershell.exe -Exec Bypass -Command "Set-Service -Name AppIDSvc -StartupType Automatic"'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+
+            { Get-PSRawAutoRun -ScheduledTasks | Add-PSAutoRunAuthentiCodeSignature -VerifyDigitalSignature -ErrorAction Stop } | should not throw
+        }
+    }
 # Emulate what Get-PSRawAutoRun -ScheduledTasks returns & pass it to Get-PSPrettyAutorun
 
     Context 'Inside Get-PSRawAutoRun' {
@@ -567,6 +600,20 @@ Describe 'Testing Get-PSPrettyAutorun for WMI' {
 #region Logon
 
 Describe 'Testing Get-PSPrettyAutorun for Logon' {
+
+    It 'issue 84 should be solved' {
+        Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKCU:\Software\\Microsoft\Windows\CurrentVersion\Run'
+                Item     = 'Discord'
+                Category = 'Logon'
+                Value    = 'C:\ProgramData\Etienne\Discord\app-0.0.0\Discord.exe'
+            }
+        } -ParameterFilter { $Logon -eq [switch]::Present }
+        $i = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun).ImagePath
+        # Write-Verbose -Message "#$($i)#" -Verbose
+        $i -eq 'C:\ProgramData\Etienne\Discord\app-0.0.0\Discord.exe' | should be $true
+    }
 
     # fake teams.exe with no quote or space
     It 'issue 70 bis should be solved' {

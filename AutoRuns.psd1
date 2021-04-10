@@ -4,7 +4,7 @@
 RootModule = 'AutoRuns.psm1'
 
 # Version number of this module.
-ModuleVersion = '13.98'
+ModuleVersion = '13.98.1'
 
 # ID used to uniquely identify this module
 GUID = '5df29b51-5627-43f6-bcae-a07a62887a2f'
@@ -28,12 +28,14 @@ PowerShellVersion = '4.0'
 # CLRVersion = '4.0'
 
 # Functions to export from this module
-FunctionsToExport = @('Get-PSAutorun')
+FunctionsToExport = @('Get-PSAutorun','New-AutoRunsBaseLine','Compare-AutoRunsBaseLine')
 # FunctionsToExport = '*'
 
 PrivateData = @{
 
     PSData = @{
+
+        Prerelease = 'preview'
 
         # Tags applied to this module. These help with module discovery in online galleries.
         Tags = @('security','defense','PSEdition_Core','PSEdition_Desktop')
