@@ -2821,3 +2821,213 @@ Get-PSAutorun -WMI -VerifyDigitalSignature | Where { -not $_.isOSBinary }
     +HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunonceEx
     +HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run
 #>
+
+Function Get-NewAutoRunsFlatArtifact {
+<#
+    .SYNOPSIS
+        Get a flat autoruns artifact
+
+    .DESCRIPTION
+        Get a flat autoruns artifact as strings sent into the output stream to be stored in a .ps1 file
+
+    .PARAMETER InputObject
+        Objects produced by the Get-PSAutorun function
+
+    .PARAMETER NoEnd
+        Switch to indicate that it should not append a last comma
+
+#>
+[CmdletBinding()]
+Param(
+[Parameter(Mandatory,ValueFromPipeline)]
+[object[]]$InputObject,
+
+[switch]$NoEnd
+)
+Begin{}
+Process {
+    $properties = $InputObject | Select-Object -First 1 |
+    ForEach-Object { $_.PSObject.Properties }| Select-Object -Expand Name
+    Write-Verbose -Message "Found $($properties)"
+
+    $InputObject |
+    ForEach-Object -Process {
+
+        $Item = $_
+        Write-Verbose -Message "Item: $($Item)"
+        $properties |
+        ForEach-Object -Begin {
+            ' [PSCustomObject]@{'
+        } -Process {
+            $p = $_
+            Write-Verbose -Message "Dealing with $($p)"
+            if ($null -ne $Item.$p) {
+                Switch ($Item.$p) {
+                    {$_ -is [string]} {
+                        Write-Verbose -Message "Its value $($Item.$p) is a String"                      
+                        "  {0}='{1}'" -f $p,[Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($Item.$p)
+                        break
+                    }
+                    {$_ -eq [string]::Empty} {
+                        Write-Verbose -Message "Its value $($Item.$p) is an empty String"
+                        "  {0}=''" -f $p
+
+                        break
+                    }
+                    {$_ -is [long]} {
+                        Write-Verbose -Message "Its value $($Item.$p) is an Long"
+                        '  {0}=[long]{1}' -f $p,$Item.$p
+                        break
+                    }
+                    {$_ -is [DateTime]} {
+                        Write-Verbose -Message "Its value $($Item.$p) is a DateTime"
+                        '  {0}=[datetime]{1} # {2}' -f $p,$Item.$p.Ticks,$Item.$p.ToString('u')
+                        break
+                    }
+                    {$_ -is [bool]} {
+                        Write-Verbose -Message "Its value $($Item.$p) is a Boolean"
+                        "  {0}=[bool]'{1}'" -f $p,$Item.$p
+                    }
+                    default   {
+                        Write-Warning -Message "Shouldn't be here for $($p) = $($Item.$p)"
+                    }
+                }
+            } else {
+                '  {0}=$null' -f $p
+            }
+        } -End {
+            if ($NoEnd) {
+                ' }'
+            } else {
+                ' },'
+            }
+        }
+    }
+}
+End {}
+}
+
+Function New-AutoRunsBaseLine {
+<#
+    .SYNOPSIS
+        Create a baseline file from Autoruns artifact(s).
+
+    .DESCRIPTION
+        Create a baseline from Autoruns artifact(s) as a PowerShell script (.ps1) file.
+
+    .PARAMETER InputObject
+        Objects produced by the Get-PSAutorun function
+
+    .PARAMETER FilePath
+        String that indicates an alternative file location.
+
+#>
+[CmdletBinding(SupportsShouldProcess)]
+Param(
+[Parameter(Mandatory,ValueFromPipeline)]
+[object[]]$InputObject,
+
+[Parameter()]
+[string]$FilePath = "~/Documents/PSAutoRunsBaseLine-$((Get-Date).ToString('yyyyMMddHHmmss')).ps1"
+
+)
+Begin {
+    $Count = 0
+    $Results = New-Object -TypeName System.Collections.ArrayList
+    if ($PSBoundParameters.Keys.Contains('InputObject')) {
+        $FromPipeLine = $false
+    } else {
+        $FromPipeLine = $true
+    }
+    $OFHT = @{
+        ErrorAction = 'Stop'
+        FilePath = "$($FilePath)"
+        NoClobber = ([switch]::Present)
+        Force = ([switch]::Present)
+        Encoding = 'UTF8'
+        Append = $false
+    }
+}
+Process {
+    $InputObject |
+    ForEach-Object {
+        $Count++
+        if ($Count -eq 1) {
+            $First = $_
+        }
+        if ($Count -ge 2) {
+            $null = $Results.Add(
+                ($_ | Get-NewAutoRunsFlatArtifact -Verbose:$false)
+            )
+        }
+    }
+}
+End {
+    try {
+        $(
+            '@('
+            if ($Count -eq 1) {
+                $InputObject | Get-NewAutoRunsFlatArtifact -Verbose:$false -NoEnd
+            } elseif ($Count -eq 2) {
+                $First | Get-NewAutoRunsFlatArtifact -Verbose:$false
+                if ($FromPipeLine) {
+                    $InputObject | Get-NewAutoRunsFlatArtifact -Verbose:$false -NoEnd
+                } else {
+                    $InputObject[1] | Get-NewAutoRunsFlatArtifact -Verbose:$false -NoEnd
+                }
+            } elseif ($Count -gt 2) {
+                $First | Get-NewAutoRunsFlatArtifact -Verbose:$false
+                $Results[0..$($Results.Count - 2)]
+                if ($FromPipeLine) {
+                    $InputObject | Get-NewAutoRunsFlatArtifact -Verbose:$false -NoEnd
+                } else {
+                    $InputObject[-1] | Get-NewAutoRunsFlatArtifact -Verbose:$false -NoEnd
+                }
+            }
+            ')'
+        ) |
+        Out-File @OFHT
+        Write-Verbose -Message "PSAutoRunsBaseLine $($FilePath) successfully created"
+    } catch {
+        Write-Warning -Message "Failed to create baseline because $($_.Exception.Message)"
+    }
+}
+}
+
+Function Compare-AutoRunsBaseLine {
+<#
+    .SYNOPSIS
+        Compare two baseline files of Autoruns artifact(s).
+
+    .DESCRIPTION
+        Compare two baseline files of Autoruns artifact(s).
+
+    .PARAMETER ReferenceBaseLineFile
+        String that indicates the location of a baseline file.
+
+    .PARAMETER DifferenceBaseLineFile
+        String that indicates the location of the other baseline file.
+#>
+[CmdletBinding()]
+Param(
+[Parameter()]
+[string]$ReferenceBaseLineFile = "$((Get-Item -Path ~/Documents/PSAutoRunsBaseLine*.ps1 | Select-Object -First 1).FullName)",
+
+[Parameter()]
+[string]$DifferenceBaseLineFile = "$((Get-Item -Path ~/Documents/PSAutoRunsBaseLine*.ps1 | Select-Object -First 2 | Select-Object -Last 1).FullName)"
+)
+Begin {
+    Write-Verbose -Message "Reference file set to $($ReferenceBaseLineFile)"
+    Write-Verbose -Message "Difference file set to $($DifferenceBaseLineFile)"
+
+    $L1 = . $ReferenceBaseLineFile
+    $L2 = . $DifferenceBaseLineFile
+
+    $Props = 'Path','Item','Category','Value','ImagePath','Size','LastWriteTime','Version',
+    'MD5','SHA1','SHA256','Signed','IsOSBinary','Publisher'
+}
+Process {}
+End {
+    Compare-Object -ReferenceObject $L1 -DifferenceObject ($L2) -Property $Props
+}
+}
