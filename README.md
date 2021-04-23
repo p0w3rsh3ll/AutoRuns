@@ -237,6 +237,9 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 
 ## Original [Autoruns.exe](https://docs.microsoft.com/en-us/sysinternals/downloads/autoruns) from Mark Russinovich
 
+[Autoruns v13.99](https://techcommunity.microsoft.com/t5/sysinternals-blog/procmon-v3-70-sysmon-v13-10-autoruns-v13-99-tcpview-v4-01-and/ba-p/2280263)
+>This update to Autoruns fixes a bug that resulted in some empty locations being hidden when the Include Empty Locations option is selected.
+
 [Autoruns v13.98](https://techcommunity.microsoft.com/t5/sysinternals-blog/sysmon-v11-10-sigcheck-v2-80-autoruns-v13-98/ba-p/1485287)
 >This release of Autoruns resolves an issue where Microsoft Defender binaries were being flagged as unsigned.
 
