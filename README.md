@@ -193,6 +193,7 @@ gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessin
   - [x] 1909
   - [x] 2004
   - [x] 20H2
+  - [x] 21H1
 - [ ] Test the module on Windows RT
 - [ ] Review Office Add-ins code with Office x86 and x64 versions
 
