@@ -31,7 +31,7 @@ Find-Module -Name Autoruns -Repository PSGallery
 ```
 Version    Name                                Repository           Description
 -------    ----                                ----------           -----------                                   
-13.99      AutoRuns                            PSGallery            AutoRuns is a module ...
+14.00      AutoRuns                            PSGallery            AutoRuns is a module ...
 ```
 
 ```powershell
@@ -44,8 +44,8 @@ Stop and please review the content of the module, I mean the code to make sure i
 You can also verify that the SHA256 hashes of downloaded files match those stored in the catalog file
 ```powershell
 $HT = @{
-    CatalogFilePath = "~/Downloads/AutoRuns/13.99/AutoRuns.cat"
-    Path = "~/Downloads/AutoRuns/13.99"
+    CatalogFilePath = "~/Downloads/AutoRuns/14.00/AutoRuns.cat"
+    Path = "~/Downloads/AutoRuns/14.00"
     Detailed = $true
     FilesToSkip = 'PSGetModuleInfo.xml'
 }
@@ -54,7 +54,7 @@ Test-FileCatalog @HT
 
 ```powershell
 # Import the module
-Import-Module ~/Downloads/AutoRuns/13.99/AutoRuns.psd1 -Force -Verbose
+Import-Module ~/Downloads/AutoRuns/14.00/AutoRuns.psd1 -Force -Verbose
 ```
 
 <a name="Functions"/>
@@ -66,9 +66,9 @@ Get-Command -Module AutoRuns
 ```
 CommandType     Name                                               Version    Source
 -----------     ----                                               -------    ------
-Function        Compare-AutoRunsBaseLine                           13.99      AutoRuns
-Function        Get-PSAutorun                                      13.99      AutoRuns
-Function        New-AutoRunsBaseLine                               13.99      AutoRuns
+Function        Compare-AutoRunsBaseLine                           14.00      AutoRuns
+Function        Get-PSAutorun                                      14.00      AutoRuns
+Function        New-AutoRunsBaseLine                               14.00      AutoRuns
 ```
 
 
@@ -194,6 +194,8 @@ gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessin
   - [x] 2004
   - [x] 20H2
   - [x] 21H1
+  - [ ] 21H2
+- [ ] Test the module on various versions of Windows 11
 - [ ] Test the module on Windows RT
 - [ ] Review Office Add-ins code with Office x86 and x64 versions
 
@@ -242,7 +244,7 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 >Autoruns, a utility for monitoring startup items, is the latest Sysinternals tool to receive a UI overhaul including a dark theme.
 
 [Autoruns v13.100](https://techcommunity.microsoft.com/t5/sysinternals-blog/autoruns-v13-100/ba-p/2282998)
->This update to Autoruns fixes a crash reported in v13.99.
+>This update to Autoruns fixes a crash reported in v14.00.
 
 [Autoruns v13.99](https://techcommunity.microsoft.com/t5/sysinternals-blog/procmon-v3-70-sysmon-v13-10-autoruns-v13-99-tcpview-v4-01-and/ba-p/2280263)
 >This update to Autoruns fixes a bug that resulted in some empty locations being hidden when the Include Empty Locations option is selected.
