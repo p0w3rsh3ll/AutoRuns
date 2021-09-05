@@ -705,8 +705,9 @@ Begin {
                 }
 
                 # LangBarAddin
-                Get-RegValue -Path 'HKLM:\Software\Microsoft\Ctf\LangBarAddin' -Name '*' @Category
-
+                $null,'Wow6432Node' | Foreach-Object -Process {
+                    Get-RegValue -Path "HKLM:\Software\$($_)\Microsoft\Ctf\LangBarAddin" -Name '*' @Category
+                }
                 #endregion Explorer
 
                 #region User Explorer
@@ -1411,17 +1412,20 @@ Begin {
 	            }
 
                 # Filter
-	            $key = 'HKLM:\Software\Classes\Filter'
-                if (Test-Path -Path $key -PathType Container) {
-		            (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
-                        [pscustomobject]@{
-                            Path = $key
-                            Item = $_
-                            Value = (Get-ItemProperty -Path (Join-Path -Path 'HKLM:\SOFTWARE\Classes\CLSID' -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
-                            Category = 'Codecs'
-                        }
-		            }
-	            }
+                $null,'Wow6432Node' | Foreach-Object {
+			        $key = "HKLM:\Software\$($_)Classes\Filter"
+                    $clsidp = "HKLM:\Software\$($_)\Classes\CLSID"
+                    if (Test-Path -Path $key -PathType Container) {
+		                (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
+                            [pscustomobject]@{
+                                Path = $key
+                                Item = $_
+                                Value = (Get-ItemProperty -Path (Join-Path -Path $clsidp -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
+                                Category = 'Codecs'
+                            }
+		                }
+	                }
+                }
 
                 # Instances
 	            @('{083863F1-70DE-11d0-BD40-00A0C911CE86}','{AC757296-3522-4E11-9862-C17BE5A1767E}',
@@ -1540,15 +1544,17 @@ Begin {
                 # Microsoft Office Memory Corruption Vulnerability (CVE-2015-1641)
                 'HKLM:',$Users.ForEach({ $_['Hive']}) | ForEach-Object {
                     $root = $_
-                    $key = "$($root)\SOFTWARE\Microsoft\Office test\Special\Perf"
-                    if (Test-Path "$($root)\SOFTWARE\Microsoft\Office test\Special\Perf") {
-                        if ((Get-ItemProperty -Path "$($root)\SOFTWARE\Microsoft\Office test\Special\Perf" -Name '(default)' -ErrorAction SilentlyContinue).'(default)') {
-	                        [pscustomobject]@{
-	                            Path = $key
-	                            Item = '(default)'
-                                Value = (Get-ItemProperty -Path "$($root)\SOFTWARE\Microsoft\Office test\Special\Perf" -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
-                                Category = 'Office Addins';
-	                        }
+                    $null,'Wow6432Node' | Foreach-Object {
+                        $key = "$($root)\SOFTWARE\$($_)\Microsoft\Office test\Special\Perf"
+                        if (Test-Path "$($root)\SOFTWARE\$($_)\Microsoft\Office test\Special\Perf") {
+                            if ((Get-ItemProperty -Path "$($root)\SOFTWARE\$($_)\Microsoft\Office test\Special\Perf" -Name '(default)' -ErrorAction SilentlyContinue).'(default)') {
+	                            [pscustomobject]@{
+	                                Path = $key
+	                                Item = '(default)'
+                                    Value = (Get-ItemProperty -Path "$($root)\SOFTWARE\$($_)\Microsoft\Office test\Special\Perf" -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
+                                    Category = 'Office Addins';
+	                            }
+                            }
                         }
                     }
                 }
