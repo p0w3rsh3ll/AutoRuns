@@ -1201,6 +1201,7 @@ Begin {
                 Get-RegValue -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows' -Name 'IconServiceLib' @Category
 
                 $null,'Wow6432Node' | Foreach-Object { Get-RegValue -Path "HKLM:\SOFTWARE\$($_)\Microsoft\Windows CE Services\AutoStartOnConnect" -Name '*' @Category }
+                $null,'Wow6432Node' | Foreach-Object { Get-RegValue -Path "HKLM:\SOFTWARE\$($_)\Microsoft\Windows CE Services\AutoStartDisconnect" -Name '*' @Category }
                 $null,'Wow6432Node' | Foreach-Object { Get-RegValue -Path "HKLM:\SOFTWARE\$($_)\Microsoft\Windows CE Services\AutoStartOnDisconnect" -Name '*' @Category }
 
                 #endregion Logon
