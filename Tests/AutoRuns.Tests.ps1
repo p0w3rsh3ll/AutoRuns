@@ -55,7 +55,7 @@ Describe 'Testing Get-PSPrettyAutorun for Print Monitors' {
             }
         } -ParameterFilter { $PrintMonitorDLLs -eq [switch]::Present }
         $i = (Get-PSRawAutoRun -PrintMonitorDLLs | Get-PSPrettyAutorun).ImagePath
-        $i -ceq 'C:\windows\tracing\myport.txt' | should be $true
+        $i -eq 'C:\windows\tracing\myport.txt' | should be $true
     }
 }
 #endregion
@@ -313,7 +313,7 @@ Describe 'Testing ScheduledTasks' {
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
 
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'C:\WINDOWS\system32\calluxxprovider.vbs' | should be $true
+            $i -eq 'C:\WINDOWS\system32\calluxxprovider.vbs' | should be $true
         }
 
         # Scheduled task issue: Server Manager Performance Monitor #49
@@ -330,7 +330,7 @@ Describe 'Testing ScheduledTasks' {
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
 
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'C:\WINDOWS\system32\pla.dll' | should be $true
+            $i -eq 'C:\WINDOWS\system32\pla.dll' | should be $true
         }
 
         # Scheduled task ReplaceOMCert on a Azure VM #41
@@ -347,7 +347,7 @@ Describe 'Testing ScheduledTasks' {
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
 
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'C:\Program Files\Microsoft Monitoring Agent\Agent\Tools\UpdateOMCert.ps1' | should be $true
+            $i -eq 'C:\Program Files\Microsoft Monitoring Agent\Agent\Tools\UpdateOMCert.ps1' | should be $true
         }
 
         # ImagePath is wrong for FODCleanupTask #38
@@ -364,7 +364,7 @@ Describe 'Testing ScheduledTasks' {
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
 
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'C:\WINDOWS\system32\WinBioPlugIns\FaceFodUninstaller.exe' | should be $true
+            $i -eq 'C:\WINDOWS\system32\WinBioPlugIns\FaceFodUninstaller.exe' | should be $true
         }
 
         # Scheduled tasks with a powershell script file in quotes #37
@@ -379,7 +379,7 @@ Describe 'Testing ScheduledTasks' {
                 }
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'C:\Windows\TTest.ps1' | should be $true
+            $i -eq 'C:\Windows\TTest.ps1' | should be $true
         }
         It 'issue #37.1 should be solved' {
             Mock -CommandName Get-PSRawAutoRun -MockWith {
@@ -391,7 +391,7 @@ Describe 'Testing ScheduledTasks' {
                 }
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'C:\Windows\TTest.ps1' | should be $true
+            $i -eq 'C:\Windows\TTest.ps1' | should be $true
         }
 
         # Change image path for scheduled tasks that run powershell.exe #33
@@ -406,7 +406,7 @@ Describe 'Testing ScheduledTasks' {
                 }
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'c:\windows\system32\logoff.ps1' | should be $true
+            $i -eq 'c:\windows\system32\logoff.ps1' | should be $true
         }
 
         # special powershell.exe file.ps1
@@ -421,7 +421,7 @@ Describe 'Testing ScheduledTasks' {
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
             # Write-Verbose -Message "#$($i)#" -Verbose
-            $i -ceq 'file.ps1' | should be $true
+            $i -eq 'file.ps1' | should be $true
         }
 
         # special powershell.exe -f file.ps1 -exec bypass
@@ -435,7 +435,7 @@ Describe 'Testing ScheduledTasks' {
                 }
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'file.ps1' | should be $true
+            $i -eq 'file.ps1' | should be $true
         }
         # special powershell.exe -fil file.ps1 -exec bypass
         It 'issue #33.3 should be solved' {
@@ -448,7 +448,7 @@ Describe 'Testing ScheduledTasks' {
                 }
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'file.ps1' | should be $true
+            $i -eq 'file.ps1' | should be $true
         }
         # special powershell.exe -exec bypass -file file.ps1
         It 'issue #33.4 should be solved' {
@@ -461,7 +461,7 @@ Describe 'Testing ScheduledTasks' {
                 }
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'file.ps1' | should be $true
+            $i -eq 'file.ps1' | should be $true
         }
         # special powershell.exe -exec bypass -file file.ps1
         It 'issue #33.5 should be solved' {
@@ -474,7 +474,7 @@ Describe 'Testing ScheduledTasks' {
                 }
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'file.ps1' | should be $true
+            $i -eq 'file.ps1' | should be $true
         }
         # but not powershell.exe -enc base64 or powershell.exe -command "cmd"
         It 'issue #33.6 should be solved' {
@@ -487,7 +487,7 @@ Describe 'Testing ScheduledTasks' {
                 }
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'powershell.exe -enc base64 or powershell.exe -command "cmd"' | should be $true
+            $i -eq 'powershell.exe -enc base64 or powershell.exe -command "cmd"' | should be $true
         }
 
         # Wrong image path for a scheduled task that runs directly a bat file #32
@@ -502,7 +502,7 @@ Describe 'Testing ScheduledTasks' {
                 }
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'C:\Program Files\action.bat' | should be $true
+            $i -eq 'C:\Program Files\action.bat' | should be $true
         }
 
         # Wrong imagepath for a scheduled task that runs directly a vbs file #31
@@ -517,7 +517,7 @@ Describe 'Testing ScheduledTasks' {
                 }
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'C:\Program Files (x86)\Mirillis\Action!\Action.vbs' | should be $true
+            $i -eq 'C:\Program Files (x86)\Mirillis\Action!\Action.vbs' | should be $true
         }
 
         # Specific scheduled task for O2016 heartbeat #25
@@ -547,7 +547,7 @@ Describe 'Testing ScheduledTasks' {
                 }
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'C:\ProgramData\Microsoft\Windows Defender\platform\4.12.17007.18022-0\MpCmdRun.exe' | should be $true
+            $i -eq 'C:\ProgramData\Microsoft\Windows Defender\platform\4.12.17007.18022-0\MpCmdRun.exe' | should be $true
         }
         It 'issue #22.1 should be solved' {
             Mock -CommandName Get-PSRawAutoRun -MockWith {
@@ -559,7 +559,7 @@ Describe 'Testing ScheduledTasks' {
                 }
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -ceq 'C:\ProgramData\Microsoft\Windows Defender\platform\4.12.17007.18022-0\MpCmdRun.exe' | should be $true
+            $i -eq 'C:\ProgramData\Microsoft\Windows Defender\platform\4.12.17007.18022-0\MpCmdRun.exe' | should be $true
         }
     }
 }
@@ -581,7 +581,7 @@ Describe 'Testing Get-PSPrettyAutorun for WMI' {
             }
         } -ParameterFilter { $WMI -eq [switch]::Present }
         $i = (Get-PSRawAutoRun -WMI | Get-PSPrettyAutorun).ImagePath
-        $i -ceq 'C:\WINDOWS\System32\iscsiwmi.dll' | should be $true
+        $i -eq 'C:\WINDOWS\System32\iscsiwmi.dll' | should be $true
     }
 
 # Get-PSAutorun -WMI throws an error in PowerShell Core 6.0 #10
@@ -690,7 +690,7 @@ Describe 'Testing Get-PSPrettyAutorun for Logon' {
             }
         } -ParameterFilter { $Logon -eq [switch]::Present }
         $i = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun).ImagePath
-        $i -ceq 'C:\WINDOWS\system32\unregmp2.exe' | should be $true
+        $i -eq 'C:\WINDOWS\system32\unregmp2.exe' | should be $true
     }
 
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/18
@@ -708,7 +708,7 @@ Describe 'Testing Get-PSPrettyAutorun for Logon' {
             }
         } -ParameterFilter { $Logon -eq [switch]::Present }
         $i = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun).ImagePath
-        $i -ceq 'C:\malware.eXe' | should be $true
+        $i -eq 'C:\malware.eXe' | should be $true
     }
     It 'issue 18.2 should be solved' {
         Mock -CommandName Get-PSRawAutoRun -MockWith {
@@ -720,7 +720,7 @@ Describe 'Testing Get-PSPrettyAutorun for Logon' {
             }
         } -ParameterFilter { $Logon -eq [switch]::Present }
         $i = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun).ImagePath
-        $i -ceq 'C:\temp\messageBox64.dll' | should be $true
+        $i -eq 'C:\temp\messageBox64.dll' | should be $true
     }
     It 'issue 18.3 should be solved' {
         Mock -CommandName Get-PSRawAutoRun -MockWith {
@@ -735,7 +735,7 @@ Describe 'Testing Get-PSPrettyAutorun for Logon' {
         $j = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun | Select-Object -First 2 | Select-Object -Last 1).ImagePath
         $k = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun | Select-Object -Last 1).ImagePath
         (
-        ($i -ceq 'c:\windows\system32\url.dll') -and
+        ($i -eq 'c:\windows\system32\url.dll') -and
         ($j -eq 'OpenURL') -and
         ($k -eq '"http://www.google.com"')
         ) | should be $true
@@ -763,7 +763,7 @@ Describe 'Testing Get-PSPrettyAutorun for Logon' {
         $i = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun | Select-Object -First 1).ImagePath
         $j = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun | Select-Object -First 2 | Select-Object -Last 1).ImagePath
         (
-        ($i -ceq 'C:\Windows\System32\userinit.exe') -and
+        ($i -eq 'C:\Windows\System32\userinit.exe') -and
         ($j -eq 'C:\malware.exe')
         ) | should be $true
     }
@@ -800,7 +800,7 @@ Describe 'Testing Get-PSPrettyAutorun for AppinitDLLs' {
         # Write-Verbose -Message "-$($i)-" -Verbose
         # Write-Verbose -Message "-$($j)-" -Verbose
         (
-        ($i -ceq 'c:\malWare1') -and
+        ($i -eq 'c:\malWare1') -and
         ($j -eq 'C:\malware.eXe')
         ) | should be $true
     }
@@ -816,7 +816,7 @@ Describe 'Testing Get-PSPrettyAutorun for AppinitDLLs' {
         } -ParameterFilter { $AppinitDLLs -eq [switch]::Present }
         $i = (Get-PSRawAutoRun -AppinitDLLs | Get-PSPrettyAutorun | Select-Object -First 1).ImagePath
         $j = (Get-PSRawAutoRun -AppinitDLLs | Get-PSPrettyAutorun | Select-Object -First 2 | Select-Object  -Last 1).ImagePath
-        (($i -ceq 'c:\malWare1.eXe') -and ($j -eq 'C:\malware2.ExE')) | should be $true
+        (($i -eq 'c:\malWare1.eXe') -and ($j -eq 'C:\malware2.ExE')) | should be $true
     }
  }
 #endregion AppinitDLLs
@@ -856,7 +856,7 @@ Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' {
     #     }
     #     $i = (Get-PSRawAutoRun -ServicesAndDrivers | Get-PSPrettyAutorun -Verbose).ImagePath
     #     # Write-Verbose -Message "-$($i)-" -Verbose
-    #     $i -ceq 'C:\Windows\system32\ibtsiva.EXE' | should be $true
+    #     $i -eq 'C:\Windows\system32\ibtsiva.EXE' | should be $true
     # }
 
     # Service located in C:\packages in Windows 10 Azure VM #40
@@ -871,7 +871,7 @@ Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' {
             }
         } -ParameterFilter { $ServicesAndDrivers -eq [switch]::Present }
         $i = (Get-PSRawAutoRun -ServicesAndDrivers | Get-PSPrettyAutorun).ImagePath
-        $i -ceq 'C:\Packages\Plugins\Microsoft.EnterpriseCloud.Monitoring.MicrosoftMonitoringAgent\1.0.11081.4\MMAExtensionHeartbeatService.exe' |
+        $i -eq 'C:\Packages\Plugins\Microsoft.EnterpriseCloud.Monitoring.MicrosoftMonitoringAgent\1.0.11081.4\MMAExtensionHeartbeatService.exe' |
         should be $true
     }
 
@@ -887,7 +887,7 @@ Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' {
             }
         } -ParameterFilter { $ServicesAndDrivers -eq [switch]::Present }
         $i = (Get-PSRawAutoRun -ServicesAndDrivers | Get-PSPrettyAutorun).ImagePath
-        $i -ceq 'C:\Program Files (x86)\Common Files\BattlEye\BEDaisy.sys' | should be $true
+        $i -eq 'C:\Program Files (x86)\Common Files\BattlEye\BEDaisy.sys' | should be $true
     }
 
     # No size, version if Drivers is in %programfile% and values has \??\ at the beginning #20
@@ -902,7 +902,7 @@ Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' {
             }
         } -ParameterFilter { $ServicesAndDrivers -eq [switch]::Present }
         $i = (Get-PSRawAutoRun -ServicesAndDrivers | Get-PSPrettyAutorun).ImagePath
-        $i -ceq 'C:\Program Files\Logitech Gaming Software\Drivers\LgCoreTemp\lgcoretemp.sys' | should be $true
+        $i -eq 'C:\Program Files\Logitech Gaming Software\Drivers\LgCoreTemp\lgcoretemp.sys' | should be $true
     }
 
     # No size, version... because of quotes for services located in ProgramData #19
@@ -917,7 +917,7 @@ Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' {
             }
         } -ParameterFilter { $ServicesAndDrivers -eq [switch]::Present }
         $i = (Get-PSRawAutoRun -ServicesAndDrivers | Get-PSPrettyAutorun).ImagePath
-        $i -ceq 'C:\ProgramData\Microsoft\Windows Defender\platform\4.12.17007.18022-0\MsMpEng.exe' | should be $true
+        $i -eq 'C:\ProgramData\Microsoft\Windows Defender\platform\4.12.17007.18022-0\MsMpEng.exe' | should be $true
     }
 
     # Wrong imagepath when the service value targets a file w/o extension #53
@@ -933,7 +933,7 @@ Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' {
         } -ParameterFilter { $ServicesAndDrivers -eq [switch]::Present }
         $i = (Get-PSRawAutoRun -ServicesAndDrivers | Get-PSPrettyAutorun).ImagePath
         # Write-Verbose -Message "-$($i)-" -Verbose
-        $i -ceq 'C:\Windows\system32\ibtsiva' | should be $true
+        $i -eq 'C:\Windows\system32\ibtsiva' | should be $true
     }
 
     # Imagepath for drivers under SysWow64 #52
@@ -949,7 +949,7 @@ Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' {
         } -ParameterFilter { $ServicesAndDrivers -eq [switch]::Present }
         $i = (Get-PSRawAutoRun -ServicesAndDrivers | Get-PSPrettyAutorun).ImagePath
         # Write-Verbose -Message "-$($i)-" -Verbose
-        $i -ceq 'C:\WINDOWS\SysWow64\drivers\AsIO.sys' | should be $true
+        $i -eq 'C:\WINDOWS\SysWow64\drivers\AsIO.sys' | should be $true
     }
 }
 #endregion
@@ -1011,7 +1011,7 @@ Describe 'Testing Get-PSPrettyAutorun for ImageHijacks' {
             } -ParameterFilter { $ImageHijacks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ImageHijacks | Get-PSPrettyAutorun).ImagePath
             # Write-Verbose -Message "-$($i)-" -Verbose
-            $i -ceq 'C:\Program Files\Internet Explorer\IEXPLORE.EXE' | should be $true
+            $i -eq 'C:\Program Files\Internet Explorer\IEXPLORE.EXE' | should be $true
         }
     }
 }
