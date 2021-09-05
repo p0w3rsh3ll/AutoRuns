@@ -244,7 +244,7 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 >Autoruns, a utility for monitoring startup items, is the latest Sysinternals tool to receive a UI overhaul including a dark theme.
 
 [Autoruns v13.100](https://techcommunity.microsoft.com/t5/sysinternals-blog/autoruns-v13-100/ba-p/2282998)
->This update to Autoruns fixes a crash reported in v14.00.
+>This update to Autoruns fixes a crash reported in v13.99.
 
 [Autoruns v13.99](https://techcommunity.microsoft.com/t5/sysinternals-blog/procmon-v3-70-sysmon-v13-10-autoruns-v13-99-tcpview-v4-01-and/ba-p/2280263)
 >This update to Autoruns fixes a bug that resulted in some empty locations being hidden when the Include Empty Locations option is selected.
