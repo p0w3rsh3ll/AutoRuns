@@ -1090,6 +1090,7 @@ Begin {
                 }
 
                 Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run' -Name '*' @Category
+                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\Software\Microsoft\Windows\CurrentVersion\Run' -Name '*' @Category
 
                 # Removed from 13.82 but key/value still exist > restored in 13.90
                 Get-RegValue -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp'  -Name 'InitialProgram' @Category
