@@ -240,6 +240,15 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 
 ## Original [Autoruns.exe](https://docs.microsoft.com/en-us/sysinternals/downloads/autoruns) from Mark Russinovich
 
+[Autoruns v14.09](https://techcommunity.microsoft.com/t5/sysinternals-blog/autoruns-v14-09-procmon-v3-89-sysmon-v13-33-and-zoomit-v5-10/ba-p/3176054)
+>This Autoruns update fixes a bug preventing the enabling/disabling of startup folder items.
+
+[Autoruns v14.08](https://techcommunity.microsoft.com/t5/sysinternals-blog/zoomit-v5-0-rdcman-v2-90-autoruns-procmon-tcpview-vmmap-sysmon/ba-p/3075276)
+>This Autoruns update fixes a series of application crashes, now correctly parses paths with spaces passed as command line arguments and improves .arn import functionality.
+
+[Autoruns v14.07](https://techcommunity.microsoft.com/t5/sysinternals-blog/adexplorer-v1-51-autoruns-v14-07-cacheset-v1-02-process-monitor/ba-p/3040515)
+>This Autoruns update can open .arn files from the command line, fixes RunDll32 parameter handling in some cases, supports toggling Active Setup entries, fixes a crash when no ProcExp can be found in the path and improves 32/64 bit redirection.
+
 [Autoruns v14.06](https://techcommunity.microsoft.com/t5/sysinternals-blog/autoruns-v14-06-and-sysmon-v13-30/ba-p/2887598)
 >This Autoruns release fixes a crash happening for scheduled tasks containing spaces.
 
