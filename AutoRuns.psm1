@@ -171,7 +171,7 @@ DynamicParam  {
         }
         $allUsers = (Get-Item -Path 'HKU:' -ErrorAction SilentlyContinue).GetSubKeyNames() |
         ForEach-Object -Process {
-        if ($_ | Test-isValidSid) { $_ | Get-UserNameFromSID }
+         if ($_ | Test-isValidSid) { $_ | Get-UserNameFromSID }
         } -End {'*'}
     } catch {
         Throw 'Unable list available users'
@@ -185,7 +185,10 @@ DynamicParam  {
 Begin {
     #region Dynamic parameter users:
     $Users = New-Object -TypeName System.Collections.ArrayList
-    $allUsers | Where-Object { $_  -ne '*'} |
+    (Get-Item -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList' -ErrorAction SilentlyContinue).GetSubKeyNames() |
+    ForEach-Object -Process {
+        if ($_ | Test-isValidSid) { $_ | Get-UserNameFromSID }
+    } |
     ForEach-Object {
         $n = $_
         $sid = ([System.Security.Principal.NTAccount]$n).Translate([System.Security.Principal.SecurityIdentifier]).Value
@@ -205,7 +208,7 @@ Begin {
             }
         )
     }
-
+    $allUsers = $Users
     if ($PSBoundParameters.ContainsKey('User')) {
         if ($PSBoundParameters['User'] -eq '*') {
             $Users = $Users
@@ -2015,9 +2018,17 @@ Begin {
                                     )
                                     break
                                 }
+                                '^%localappdata%\\Microsoft\\OneDrive\\OneDriveStandaloneUpdater\.exe\s/reporting' {
+                                    $s = $Item.Item -replace 'OneDrive\sReporting\sTask-',''
+                                    $f = $allusers | Where-Object { $_.SID -eq $s }
+                                    Join-Path -Path "$($f.ProfilePath)\AppData\Local" -ChildPath 'Microsoft\OneDrive\OneDriveStandaloneUpdater.exe'
+                                    break
+                                }
                                 # localappdata variable
                                 '^%localappdata%' {
-                                    Join-Path -Path "$($env:localappdata)" -ChildPath (
+                                    $s = $Item.Item -replace 'OneDrive\sStandalone\sUpdate\sTask-',''
+                                    $f = $allusers | Where-Object { $_.SID -eq $s }
+                                    Join-Path -Path "$($f.ProfilePath)\AppData\Local" -ChildPath (
                                         @([regex]'^%localappdata%\\(?<File>.*)').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
@@ -2090,8 +2101,8 @@ Begin {
                                     break
                                 }
                                 # C:\users?
-                                '^[A-Za-z]:\\' {
-                                    $_
+                                '^"?[A-Za-z]:\\' {
+                                    $_ -replace '"',''
                                     break;
                                 }
                                 # FileName.exe
@@ -2131,6 +2142,10 @@ Begin {
                             Switch -Regex ($Item.Value) {
                                 '^autocheck\sautochk\s' {
                                     "$($env:SystemRoot)\system32\autochk.exe"
+                                    break;
+                                }
+                                '^C:\\Windows\\System32\\poqexec\.exe\s' {
+                                    "$($env:SystemRoot)\system32\poqexec.exe"
                                     break;
                                 }
                                 default {
@@ -2175,6 +2190,10 @@ Begin {
                                     break;
                                 }
                                 '^System32\\[dD][rR][iI][vV][eE][rR][sS]\\' {
+                                    Join-Path -Path "$($env:systemroot)" -ChildPath $_
+                                    break;
+                                }
+                                '^System32\\DriverStore\\FileRepository\\' {
                                     Join-Path -Path "$($env:systemroot)" -ChildPath $_
                                     break;
                                 }
