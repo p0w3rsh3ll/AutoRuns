@@ -2071,7 +2071,7 @@ Begin {
                                 # ProgramFiles with no quote
                                 '^(C:\\Program\sFiles|%ProgramFiles%)\\' {
                                     Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
-                                        @([regex]'^(C:\\Program\sFiles|%ProgramFiles%)\\(?<File>.*\.[A-Za-z0-9]{1,})\s?').Matches($_) |
+                                        @([regex]'^(C:\\Program\sFiles|%ProgramFiles%)\\(?<File>.*\.[A-Za-z0-9]{1,})\s').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break

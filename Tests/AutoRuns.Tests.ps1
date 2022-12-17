@@ -173,6 +173,21 @@ Describe 'Testing ScheduledTasks' {
 
     Context 'Inside Get-PSPrettyAutorun' {
 
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/103
+        It 'issue #103 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\WINDOWS\system32\Tasks\Mozilla\Firefox Background Update 308046B0AF4A39CB'
+                    Item     = 'Firefox Background Update 308046B0AF4A39CB'
+                    Category = 'Task'
+                    Value    = 'C:\Program Files\Mozilla Firefox\firefox.exe --MOZ_LOG sync,prependheader,timestamp,append,maxsize:1,Dump:5 --MOZ_LOG_FILE C:\ProgramData\Mozilla-1de4eec8-1241-4177-a864-e594e8d1fb38\updates\308046B0AF4A39CB\backgroundupdate.moz_log --backgroundtask backgroundupdate'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            # Write-Verbose -Message "-$($i)-" -Verbose
+            $i -eq 'C:\Program Files\Mozilla Firefox\firefox.exe' | should be $true
+        }
+
         # https://github.com/p0w3rsh3ll/AutoRuns/issues/102
         It 'issue #102 should be solved' {
             Mock -CommandName Get-PSRawAutoRun -MockWith {
