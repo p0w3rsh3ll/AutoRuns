@@ -2114,6 +2114,10 @@ Begin {
                                         ).exe"
                                     break
                                 }
+                                '^sc\s[a-zA-Z]' {
+                                    "$($env:systemroot)\system32\sc.exe"
+                                    break
+                                }
                                 '^aitagent(\s/increment)?' {
                                     "$($env:systemroot)\system32\aitagent.exe"
                                     break
