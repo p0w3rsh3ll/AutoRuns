@@ -173,6 +173,63 @@ Describe 'Testing ScheduledTasks' {
 
     Context 'Inside Get-PSPrettyAutorun' {
 
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/107
+        It 'issue #107 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\windows\system32\Tasks\HP\Consent Manager Launcher'
+                    Item     = 'Consent Manager Launcher'
+                    Category = 'Task'
+                    Value    = 'sc start hptouchpointanalyticsservice'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Windows\System32\sc.exe' | should be $true
+        }
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/106
+        It 'issue #106 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\windows\system32\Tasks\Microsoft\Office\Office Feature Updates'
+                    Item     = 'Office Feature Updates'
+                    Category = 'Task'
+                    Value    = 'C:\Program Files\Microsoft Office\root\Office16\sdxhelper.exe'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            # Write-Verbose -Message "-$($i)-" -Verbose
+            $i -eq 'C:\Program Files\Microsoft Office\root\Office16\sdxhelper.exe' | should be $true
+        }
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/105
+        It 'issue #105 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\windows\system32\Tasks\HP\Sure Click\Tray icon 4.3.8.391'
+                    Item     = 'Tray icon 4.3.8.391'
+                    Category = 'Task'
+                    Value    = 'c:\Program Files\HP\Sure Click\servers\BrConsole.exe'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Program Files\HP\Sure Click\servers\BrConsole.exe' | should be $true
+        }
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/104
+        It 'issue #104 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\windows\system32\Tasks\HP\Sure Click\Sure Click 4.3.8.391'
+                    Item     = 'Sure Click 4.3.8.391'
+                    Category = 'Task'
+                    Value    = 'c:\Program Files\HP\Sure Click\servers\BrLauncher.exe vSentry start'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Program Files\HP\Sure Click\servers\BrLauncher.exe' | should be $true
+        }
+
         # https://github.com/p0w3rsh3ll/AutoRuns/issues/103
         It 'issue #103 should be solved' {
             Mock -CommandName Get-PSRawAutoRun -MockWith {
@@ -184,7 +241,6 @@ Describe 'Testing ScheduledTasks' {
                 }
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            # Write-Verbose -Message "-$($i)-" -Verbose
             $i -eq 'C:\Program Files\Mozilla Firefox\firefox.exe' | should be $true
         }
 

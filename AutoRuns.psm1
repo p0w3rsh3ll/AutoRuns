@@ -2070,11 +2070,24 @@ Begin {
                                 }
                                 # ProgramFiles with no quote
                                 '^(C:\\Program\sFiles|%ProgramFiles%)\\' {
-                                    Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
-                                        @([regex]'^(C:\\Program\sFiles|%ProgramFiles%)\\(?<File>.*\.[A-Za-z0-9]{1,})\s').Matches($_) |
-                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
-                                    )
-                                    break
+                                 Switch -Regex ($_) {
+                                  '^((C|c):\\Program\sFiles|%ProgramFiles%)\\(?<File>.+\.[A-Za-z0-9]{1,})\s' {
+                                   Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
+                                    @([regex]'^((C|c):\\Program\sFiles|%ProgramFiles%)\\(?<File>.+\.[A-Za-z0-9]{1,})\s').Matches($_)|
+                                    Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                   )
+                                   break
+                                  }
+                                  '^(C:\\Program\sFiles|%ProgramFiles%)\\(?<File>.+\.[A-Za-z0-9]{1,})$' {
+                                   Join-Path -Path "$($env:ProgramFiles)" -ChildPath (
+                                    @([regex]'^((C|c):\\Program\sFiles|%ProgramFiles%)\\(?<File>.+\.[A-Za-z0-9]{1,})$').Matches($_)|
+                                    Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                   )
+                                   break
+                                  }
+                                  default {$_}
+                                 }
+                                 break
                                 }
                                 # ProgramFilesx86 starts with a quote
                                 '^"(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\' {
