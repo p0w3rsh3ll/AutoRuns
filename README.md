@@ -186,16 +186,13 @@ gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessin
 - [x] Test the module in PowerShell Core 7.x (latest)
 - [ ] Test the module on Nano and get rid of Add-Member cmdlet
 - [ ] Test the module on various versions of Windows 10
-  - [x] 1709
-  - [x] 1803
-  - [x] 1809
-  - [x] 1903
-  - [x] 1909
-  - [x] 2004
   - [x] 20H2
   - [x] 21H1
-  - [ ] 21H2
-- [ ] Test the module on various versions of Windows 11
+  - [x] 21H2
+  - [x] 22H2
+- [x] Test the module on various versions of Windows 11
+  - [x] 21H2
+  - [x] 22H2
 - [ ] Test the module on Windows RT
 - [ ] Review Office Add-ins code with Office x86 and x64 versions
 
