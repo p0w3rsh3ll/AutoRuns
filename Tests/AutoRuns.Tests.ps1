@@ -39,6 +39,26 @@ Import-Module -Force -Verbose:$false
 
 InModuleScope FakeAutoRuns {
 
+#region Boot Execute
+
+Describe 'Testing Get-PSPrettyAutorun for BootExecute' {
+
+    # https://github.com/p0w3rsh3ll/AutoRuns/issues/100
+    It 'issue 100 should be solved' {
+        Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKLM:\System\CurrentControlSet\Control\Session Manager'
+                Item     = 'SetupExecute'
+                Category = 'Boot Execute'
+                Value    = 'C:\Windows\System32\poqexec.exe /display_progress \SystemRoot\WinSxS\pending.xml'
+            }
+        } -ParameterFilter { $BootExecute -eq [switch]::Present }
+        $i = (Get-PSRawAutoRun -BootExecute | Get-PSPrettyAutorun).ImagePath
+        $i -eq 'C:\Windows\System32\poqexec.exe' | should be $true
+    }
+}
+#endregion
+
 #region Print Monitors
 
 Describe 'Testing Get-PSPrettyAutorun for Print Monitors' {
@@ -152,6 +172,106 @@ Describe 'Testing ScheduledTasks' {
     }
 
     Context 'Inside Get-PSPrettyAutorun' {
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/107
+        It 'issue #107 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\windows\system32\Tasks\HP\Consent Manager Launcher'
+                    Item     = 'Consent Manager Launcher'
+                    Category = 'Task'
+                    Value    = 'sc start hptouchpointanalyticsservice'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Windows\System32\sc.exe' | should be $true
+        }
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/106
+        It 'issue #106 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\windows\system32\Tasks\Microsoft\Office\Office Feature Updates'
+                    Item     = 'Office Feature Updates'
+                    Category = 'Task'
+                    Value    = 'C:\Program Files\Microsoft Office\root\Office16\sdxhelper.exe'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            # Write-Verbose -Message "-$($i)-" -Verbose
+            $i -eq 'C:\Program Files\Microsoft Office\root\Office16\sdxhelper.exe' | should be $true
+        }
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/105
+        It 'issue #105 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\windows\system32\Tasks\HP\Sure Click\Tray icon 4.3.8.391'
+                    Item     = 'Tray icon 4.3.8.391'
+                    Category = 'Task'
+                    Value    = 'c:\Program Files\HP\Sure Click\servers\BrConsole.exe'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Program Files\HP\Sure Click\servers\BrConsole.exe' | should be $true
+        }
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/104
+        It 'issue #104 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\windows\system32\Tasks\HP\Sure Click\Sure Click 4.3.8.391'
+                    Item     = 'Sure Click 4.3.8.391'
+                    Category = 'Task'
+                    Value    = 'c:\Program Files\HP\Sure Click\servers\BrLauncher.exe vSentry start'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Program Files\HP\Sure Click\servers\BrLauncher.exe' | should be $true
+        }
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/103
+        It 'issue #103 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\WINDOWS\system32\Tasks\Mozilla\Firefox Background Update 308046B0AF4A39CB'
+                    Item     = 'Firefox Background Update 308046B0AF4A39CB'
+                    Category = 'Task'
+                    Value    = 'C:\Program Files\Mozilla Firefox\firefox.exe --MOZ_LOG sync,prependheader,timestamp,append,maxsize:1,Dump:5 --MOZ_LOG_FILE C:\ProgramData\Mozilla-1de4eec8-1241-4177-a864-e594e8d1fb38\updates\308046B0AF4A39CB\backgroundupdate.moz_log --backgroundtask backgroundupdate'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Program Files\Mozilla Firefox\firefox.exe' | should be $true
+        }
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/102
+        It 'issue #102 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\Windows\system32\Tasks\\TaskName'
+                    Item     = 'TaskName'
+                    Category = 'Task'
+                    Value    = '"C:\Windows\Folder1\Folder2\scriptfile.cmd"'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Windows\Folder1\Folder2\scriptfile.cmd' | should be $true
+        }
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/101
+        It 'issue #101 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\Windows\system32\Tasks\\OneDrive Reporting Task-SID'
+                    Item     = 'OneDrive Reporting Task-SID'
+                    Category = 'Task'
+                    Value    = '%localappdata%\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe /reporting'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq '\AppData\Local\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe' | should be $true
+        }
 
         # Dropbox tasks #63
         # https://github.com/p0w3rsh3ll/AutoRuns/issues/63
@@ -858,6 +978,20 @@ Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' {
     #     # Write-Verbose -Message "-$($i)-" -Verbose
     #     $i -eq 'C:\Windows\system32\ibtsiva.EXE' | should be $true
     # }
+
+    # https://github.com/p0w3rsh3ll/AutoRuns/issues/98
+    It 'issue 98 should be solved' {
+        Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKLM:\System\CurrentControlSet\Services\PRM'
+                Item     = 'ImagePath'
+                Category = 'Drivers'
+                Value    = 'System32\DriverStore\FileRepository\prm.inf_amd64_7fc9bb8ba2b73803\PRM.sys'
+            }
+        } -ParameterFilter { $ServicesAndDrivers -eq [switch]::Present }
+        $i = (Get-PSRawAutoRun -ServicesAndDrivers | Get-PSPrettyAutorun).ImagePath
+        $i -eq 'C:\Windows\System32\DriverStore\FileRepository\prm.inf_amd64_7fc9bb8ba2b73803\PRM.sys' | should be $true
+    }
 
     # Service located in C:\packages in Windows 10 Azure VM #40
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/40

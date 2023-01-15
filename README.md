@@ -31,7 +31,7 @@ Find-Module -Name Autoruns -Repository PSGallery
 ```
 Version    Name                                Repository           Description
 -------    ----                                ----------           -----------                                   
-14.0       AutoRuns                            PSGallery            AutoRuns is a module ...
+14.0.1     AutoRuns                            PSGallery            AutoRuns is a module ...
 ```
 
 ```powershell
@@ -44,8 +44,8 @@ Stop and please review the content of the module, I mean the code to make sure i
 You can also verify that the SHA256 hashes of downloaded files match those stored in the catalog file
 ```powershell
 $HT = @{
-    CatalogFilePath = "~/Downloads/AutoRuns/14.0/AutoRuns.cat"
-    Path = "~/Downloads/AutoRuns/14.0"
+    CatalogFilePath = "~/Downloads/AutoRuns/14.0.1/AutoRuns.cat"
+    Path = "~/Downloads/AutoRuns/14.0.1"
     Detailed = $true
     FilesToSkip = 'PSGetModuleInfo.xml'
 }
@@ -54,7 +54,7 @@ Test-FileCatalog @HT
 
 ```powershell
 # Import the module
-Import-Module ~/Downloads/AutoRuns/14.0/AutoRuns.psd1 -Force -Verbose
+Import-Module ~/Downloads/AutoRuns/14.0.1/AutoRuns.psd1 -Force -Verbose
 ```
 
 <a name="Functions"/>
@@ -66,9 +66,9 @@ Get-Command -Module AutoRuns
 ```
 CommandType     Name                                               Version    Source
 -----------     ----                                               -------    ------
-Function        Compare-AutoRunsBaseLine                           14.0       AutoRuns
-Function        Get-PSAutorun                                      14.0       AutoRuns
-Function        New-AutoRunsBaseLine                               14.0       AutoRuns
+Function        Compare-AutoRunsBaseLine                           14.0.1     AutoRuns
+Function        Get-PSAutorun                                      14.0.1     AutoRuns
+Function        New-AutoRunsBaseLine                               14.0.1     AutoRuns
 ```
 
 
@@ -186,16 +186,13 @@ gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessin
 - [x] Test the module in PowerShell Core 7.x (latest)
 - [ ] Test the module on Nano and get rid of Add-Member cmdlet
 - [ ] Test the module on various versions of Windows 10
-  - [x] 1709
-  - [x] 1803
-  - [x] 1809
-  - [x] 1903
-  - [x] 1909
-  - [x] 2004
   - [x] 20H2
   - [x] 21H1
-  - [ ] 21H2
-- [ ] Test the module on various versions of Windows 11
+  - [x] 21H2
+  - [x] 22H2
+- [x] Test the module on various versions of Windows 11
+  - [x] 21H2
+  - [x] 22H2
 - [ ] Test the module on Windows RT
 - [ ] Review Office Add-ins code with Office x86 and x64 versions
 
