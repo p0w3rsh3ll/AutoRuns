@@ -2222,6 +2222,10 @@ Begin {
                                     $_ -replace '\\\?\?\\',''
                                     break;
                                 }
+                                '^\\\?\?\\C:\\Windows\\' {
+                                    $_ -replace '\\\?\?\\',''
+                                    break;
+                                }
                                 '^System32\\CLFS\.sys' {
                                     $_ -replace 'System32\\',"$($env:systemroot)\system32\"
                                 }
