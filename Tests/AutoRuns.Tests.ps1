@@ -173,6 +173,21 @@ Describe 'Testing ScheduledTasks' {
 
     Context 'Inside Get-PSPrettyAutorun' {
 
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/109
+        # Related to  issue #96 and 101
+        It 'issue #109 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = "C:\WINDOWS\system32\Tasks\OneDrive Standalone Update Task-$(([System.Security.Principal.NTAccount]'Administrator').Translate([System.Security.Principal.SecurityIdentifier]).Value)"
+                    Item     = "OneDrive Standalone Update Task-$(([System.Security.Principal.NTAccount]'Administrator').Translate([System.Security.Principal.SecurityIdentifier]).Value)"
+                    Category = 'Task'
+                    Value    = '%localappdata%\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Users\Administrator\AppData\Local\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe' | should be $true
+        }
+
         # https://github.com/p0w3rsh3ll/AutoRuns/issues/107
         It 'issue #107 should be solved' {
             Mock -CommandName Get-PSRawAutoRun -MockWith {
@@ -270,7 +285,7 @@ Describe 'Testing ScheduledTasks' {
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
 
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -eq '\AppData\Local\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe' | should be $true
+            $i -eq 'AppData\Local\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe' | should be $true
         }
 
         # Dropbox tasks #63
