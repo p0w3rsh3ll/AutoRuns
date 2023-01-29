@@ -979,6 +979,20 @@ Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' {
     #     $i -eq 'C:\Windows\system32\ibtsiva.EXE' | should be $true
     # }
 
+    # https://github.com/p0w3rsh3ll/AutoRuns/issues/110
+    It 'issue #110 should be solved' {
+        Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKLM:\System\CurrentControlSet\Services\xhunter1'
+                Item     = 'ImagePath'
+                Category = 'Drivers'
+                Value    = '\??\C:\WINDOWS\xhunter1.sys'
+            }
+        } -ParameterFilter { $ServicesAndDrivers -eq [switch]::Present }
+        $i = (Get-PSRawAutoRun -ServicesAndDrivers | Get-PSPrettyAutorun).ImagePath
+        $i -eq 'C:\WINDOWS\xhunter1.sys' | should be $true
+    }
+
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/98
     It 'issue 98 should be solved' {
         Mock -CommandName Get-PSRawAutoRun -MockWith {
