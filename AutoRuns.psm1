@@ -2021,17 +2021,32 @@ Begin {
                                 '^%localappdata%\\Microsoft\\OneDrive\\OneDriveStandaloneUpdater\.exe\s/reporting' {
                                     $s = $Item.Item -replace 'OneDrive\sReporting\sTask-',''
                                     $f = $allusers | Where-Object { $_.SID -eq $s }
-                                    Join-Path -Path "$($f.ProfilePath)\AppData\Local" -ChildPath 'Microsoft\OneDrive\OneDriveStandaloneUpdater.exe'
+                                    if ($f) {
+                                        Join-Path -Path "$($f.ProfilePath)\AppData\Local" -ChildPath 'Microsoft\OneDrive\OneDriveStandaloneUpdater.exe'
+                                    } else {
+                                     if (Test-isValidSid -SID $s) {
+                                        Join-Path -Path "C:\Users\$(((Get-UserNameFromSID -SID $s) -split '\\')[1])" -ChildPath 'AppData\Local\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe'
+                                     } else {
+                                        'AppData\Local\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe'
+                                     }
+                                    }
                                     break
                                 }
                                 # localappdata variable
                                 '^%localappdata%' {
                                     $s = $Item.Item -replace 'OneDrive\sStandalone\sUpdate\sTask-',''
                                     $f = $allusers | Where-Object { $_.SID -eq $s }
-                                    Join-Path -Path "$($f.ProfilePath)\AppData\Local" -ChildPath (
-                                        @([regex]'^%localappdata%\\(?<File>.*)').Matches($_) |
-                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
-                                    )
+                                    $cp = @([regex]'^%localappdata%\\(?<File>.*)').Matches($_) |
+                                    Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    if ($f) {
+                                        Join-Path -Path "$($f.ProfilePath)\AppData\Local" -ChildPath $cp
+                                    } else {
+                                     if (Test-isValidSid -SID $s) {
+                                        Join-Path -Path "C:\Users\$(((Get-UserNameFromSID -SID $s) -split '\\')[1])\AppData\Local" -ChildPath $cp
+                                     } else {
+                                        $cp
+                                     }
+                                    }
                                     break
                                 }
                                 # special W7 case with media center
