@@ -161,12 +161,8 @@ Compare-AutoRunsBaseLine -Verbose
 ## Issues
  * What are registrations in the WMI\Default namespace introduced in Autoruns v13.7? see [c7eab48c77f578e0dcff61d2b46a479b28225a56](https://github.com/p0w3rsh3ll/AutoRuns/commit/c7eab48c77f578e0dcff61d2b46a479b28225a56)
 
-* If you run PowerShell 5.1 and Applocker in allow mode, you need to merge an appplocker rule to your local policy so that the digital signature of this module is trusted. With that in place, it will allow you to successfully load the module and use the function in an interactive shell where PowerShell language mode is set to ConstrainedLanguage.
-```powershell
-if ($ExecutionContext.SessionState.LanguageMode -eq 'ConstrainedLanguage') {
-    Get-Content -Path AWL.xml
-    Set-AppLockerPolicy -XmlPolicy AWL.xml -Verbose -Merge
-}
+* If you run PowerShell 5.1 and Applocker in allow mode, you need to add a local appplocker rule that allows the module to be loaded.
+The module files aren't signed anymore with a DigiCert certificate.
 ```
 If your corporate admin has turned off local group policy objects processing on a domain joined device, you'll need to add the trusted publisher rule in a Domain group policy.
 ```powershell
@@ -182,7 +178,6 @@ gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessin
 - [ ] Write Pester tests for this module
 
 #### OS and Software compatibility
-- [x] Test the module in PowerShell Core 6.x (latest)
 - [x] Test the module in PowerShell Core 7.x (latest)
 - [ ] Test the module on Nano and get rid of Add-Member cmdlet
 - [ ] Test the module on various versions of Windows 10
