@@ -163,7 +163,7 @@ Compare-AutoRunsBaseLine -Verbose
 
 * If you run PowerShell 5.1 and Applocker in allow mode, you need to add a local appplocker rule that allows the module to be loaded.
 The module files aren't signed anymore with a DigiCert certificate.
-```
+
 If your corporate admin has turned off local group policy objects processing on a domain joined device, you'll need to add the trusted publisher rule in a Domain group policy.
 ```powershell
 gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessing -EA 0
