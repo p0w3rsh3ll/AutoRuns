@@ -173,6 +173,20 @@ Describe 'Testing ScheduledTasks' {
 
     Context 'Inside Get-PSPrettyAutorun' {
 
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/115
+        It 'issue #115 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\WINDOWS\system32\Tasks\Microsoft\Windows\PI\SecureBootEncodeUEFI'
+                    Item     = 'SecureBootEncodeUEFI'
+                    Category = 'Task'
+                    Value    = '%WINDIR%\system32\SecureBootEncodeUEFI.exe'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\WINDOWS\system32\SecureBootEncodeUEFI.exe' | should be $true
+        }
+
         # https://github.com/p0w3rsh3ll/AutoRuns/issues/109
         # Related to  issue #96 and 101
         It 'issue #109 should be solved' {
