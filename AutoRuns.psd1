@@ -4,7 +4,7 @@
 RootModule = 'AutoRuns.psm1'
 
 # Version number of this module.
-ModuleVersion = '14.0.1'
+ModuleVersion = '14.0.2'
 
 # ID used to uniquely identify this module
 GUID = '5df29b51-5627-43f6-bcae-a07a62887a2f'
