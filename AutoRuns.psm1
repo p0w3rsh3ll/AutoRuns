@@ -2233,11 +2233,7 @@ Begin {
                                     Join-Path -Path "$($env:systemroot)" -ChildPath $_
                                     break;
                                 }
-                                '^\\\?\?\\C:\\Windows\\system32\\drivers' {
-                                    $_ -replace '\\\?\?\\',''
-                                    break;
-                                }
-                                '^\\\?\?\\C:\\Windows\\' {
+                                '^\\\?\?\\[A-Z]:\\' {
                                     $_ -replace '\\\?\?\\',''
                                     break;
                                 }
@@ -2257,10 +2253,6 @@ Begin {
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
-                                }
-                                '^(\\\?\?\\)?C:\\ProgramData' {
-                                    $_ -replace '\\\?\?\\',''
-                                    break;
                                 }
                                 '^"?C:\\ProgramData' {
                                     $_ -replace '"',''
