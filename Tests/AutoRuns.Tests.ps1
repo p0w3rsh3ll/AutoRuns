@@ -173,6 +173,20 @@ Describe 'Testing ScheduledTasks' -Tag 'ScheduledTasks' {
 
     Context 'Inside Get-PSPrettyAutorun' {
 
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/114
+        It 'issue #114 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\WINDOWS\system32\Tasks\\NahimicSvc32Run'
+                    Item     = 'NahimicSvc32Run'
+                    Category = 'Task'
+                    Value    = '"C:\Windows\SysWOW64\NahimicSvc32.exe" $(Arg0) $(Arg1) $(Arg2) $(Arg3) $(Arg4) $(Arg5) $(Arg6) $(Arg7)'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Windows\SysWOW64\NahimicSvc32.exe' | should be $true
+        }
+
         # https://github.com/p0w3rsh3ll/AutoRuns/issues/115
         It 'issue #115 should be solved' {
             Mock -CommandName Get-PSRawAutoRun -MockWith {
