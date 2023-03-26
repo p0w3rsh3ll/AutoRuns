@@ -1021,6 +1021,20 @@ Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' -Tag 'ServicesAndD
     #     $i -eq 'C:\Windows\system32\ibtsiva.EXE' | should be $true
     # }
 
+    # https://github.com/p0w3rsh3ll/AutoRuns/issues/113
+    It 'issue #113 should be solved' {
+        Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKLM:\System\CurrentControlSet\Services\atvi-randgrid_sr'
+                Item     = 'ImagePath'
+                Category = 'Drivers'
+                Value    = '\??\B:\SteamLibrary\steamapps\common\Call of Duty HQ\randgrid.sys'
+            }
+        } -ParameterFilter { $ServicesAndDrivers -eq [switch]::Present }
+        $i = (Get-PSRawAutoRun -ServicesAndDrivers | Get-PSPrettyAutorun).ImagePath
+        $i -eq 'B:\SteamLibrary\steamapps\common\Call of Duty HQ\randgrid.sys' | should be $true
+    }
+
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/110
     It 'issue #110 should be solved' {
         Mock -CommandName Get-PSRawAutoRun -MockWith {
