@@ -750,6 +750,20 @@ Describe 'Testing Get-PSPrettyAutorun for WMI' {
 
 Describe 'Testing Get-PSPrettyAutorun for Logon' {
 
+    It 'issue 112 should be solved' {
+        Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKCU:\Software\\Microsoft\Windows\CurrentVersion\Run'
+                Item     = 'FACEIT'
+                Category = 'Logon'
+                Value    = '"C:\Users\brand\AppData\Local\FACEIT\update.exe" --processStart "FACEIT.exe"'
+            }
+        } -ParameterFilter { $Logon -eq [switch]::Present }
+        $i = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun).ImagePath
+        # Write-Verbose -Message "#$($i)#" -Verbose
+        $i -eq 'C:\ProgramData\Etienne\Discord\app-0.0.0\Discord.exe' | should be $true
+    }
+
     It 'issue 84 should be solved' {
         Mock -CommandName Get-PSRawAutoRun -MockWith {
             return [PSCustomObject]@{
