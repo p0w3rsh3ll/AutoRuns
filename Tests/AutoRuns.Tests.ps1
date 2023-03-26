@@ -41,7 +41,7 @@ InModuleScope FakeAutoRuns {
 
 #region Boot Execute
 
-Describe 'Testing Get-PSPrettyAutorun for BootExecute' {
+Describe 'Testing Get-PSPrettyAutorun for BootExecute' -Tag 'BootExecute' {
 
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/100
     It 'issue 100 should be solved' {
@@ -61,7 +61,7 @@ Describe 'Testing Get-PSPrettyAutorun for BootExecute' {
 
 #region Print Monitors
 
-Describe 'Testing Get-PSPrettyAutorun for Print Monitors' {
+Describe 'Testing Get-PSPrettyAutorun for Print Monitors'  -Tag 'PrintMonitorDLLs' {
 
     #  Fix the ImagePath of Printer port #74
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/74
@@ -82,7 +82,7 @@ Describe 'Testing Get-PSPrettyAutorun for Print Monitors' {
 
 #region ScheduledTasks
 
-Describe 'Testing ScheduledTasks' {
+Describe 'Testing ScheduledTasks' -Tag 'ScheduledTasks' {
 
     Context 'Inside Add-PSAutoRunHash' {
         It 'issue 80 should be solved' {
@@ -716,7 +716,7 @@ Describe 'Testing ScheduledTasks' {
 
 #region WMI
 
-Describe 'Testing Get-PSPrettyAutorun for WMI' {
+Describe 'Testing Get-PSPrettyAutorun for WMI' -Tag 'WMI' {
 
     # WMI provider issue: MSiSCSIInitiatorProvider #51
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/51
@@ -748,7 +748,7 @@ Describe 'Testing Get-PSPrettyAutorun for WMI' {
 
 #region Logon
 
-Describe 'Testing Get-PSPrettyAutorun for Logon' {
+Describe 'Testing Get-PSPrettyAutorun for Logon' -Tag 'Logon' {
 
     It 'issue 112 should be solved' {
         Mock -CommandName Get-PSRawAutoRun -MockWith {
@@ -760,8 +760,7 @@ Describe 'Testing Get-PSPrettyAutorun for Logon' {
             }
         } -ParameterFilter { $Logon -eq [switch]::Present }
         $i = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun).ImagePath
-        # Write-Verbose -Message "#$($i)#" -Verbose
-        $i -eq 'C:\ProgramData\Etienne\Discord\app-0.0.0\Discord.exe' | should be $true
+        $i -eq 'C:\Users\brand\AppData\Local\FACEIT\update.exe' | should be $true
     }
 
     It 'issue 84 should be solved' {
@@ -935,7 +934,7 @@ Describe 'Testing Get-PSPrettyAutorun for Logon' {
 
 #region AppinitDLLs
 
-Describe 'Testing Get-PSPrettyAutorun for AppinitDLLs' {
+Describe 'Testing Get-PSPrettyAutorun for AppinitDLLs' -Tag 'AppinitDLLs' {
 
     <#
     From https://support.microsoft.com/en-us/help/197571/working-with-the-appinit-dlls-registry-value:
@@ -986,7 +985,7 @@ Describe 'Testing Get-PSPrettyAutorun for AppinitDLLs' {
 
 #region ServicesAndDrivers
 
-Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' {
+Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' -Tag 'ServicesAndDrivers' {
 
     # issue with ibtsiva (see also issue 53 below)
     # It 'issue file with no extension should be solved' {
@@ -1147,7 +1146,7 @@ Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' {
 
 #region Image Hijacks
 
-Describe 'Testing Get-PSPrettyAutorun for ImageHijacks' {
+Describe 'Testing Get-PSPrettyAutorun for ImageHijacks' -Tag 'ImageHijacks' {
 
     Context 'Inside Get-PSRawAutoRun' {
 
@@ -1210,7 +1209,7 @@ Describe 'Testing Get-PSPrettyAutorun for ImageHijacks' {
 
 #region OfficeAddins
 
-Describe 'Testing Get-PSPrettyAutorun for OfficeAddins' {
+Describe 'Testing Get-PSPrettyAutorun for OfficeAddins' -Tag 'OfficeAddins' {
 
     # OfficeAddins don't have an imagepath when HKCU hive is in use #26
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/26
@@ -1282,7 +1281,7 @@ Describe 'Testing Get-PSPrettyAutorun for OfficeAddins' {
 
 #region KnownDLLs
 
-Describe 'Testing Get-PSPrettyAutorun for KnownDLLs' {
+Describe 'Testing Get-PSPrettyAutorun for KnownDLLs' -Tag 'KnownDLLs' {
 
     # No size, version for Known dlls where image path is set to C:\WINDOWS\Syswow64 #21
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/21
