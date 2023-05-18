@@ -1055,12 +1055,31 @@ Begin {
 
                 # Local GPO scripts
                 'Startup','Shutdown','Logon','Logoff' | ForEach-Object -Process {
+                    $t = $_
                     $key = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\$($_)"
                     if (Test-Path -Path $key) {
-                        (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
+                        (Get-Item -Path $key).GetSubKeyNames() |
+                        ForEach-Object -Process {
                             $subkey = (Join-Path -Path $key -ChildPath $_)
-                            (Get-Item -Path $subkey).GetSubKeyNames() | ForEach-Object -Process {
-                                Get-RegValue -Path (Join-Path -Path $subkey -ChildPath $_) -Name 'script' @Category
+                            $gn = (Get-ItemProperty -Path $subkey -Name GPOName -ErrorAction SilentlyContinue).'GPOName'
+                            (Get-Item -Path $subkey).GetSubKeyNames() |
+                            ForEach-Object -Process {
+                                if ($gn -match '^{[A-F0-9-]+}') {
+                                    $ds = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\DataStore\Machine'
+                                    $ab = (Get-ItemProperty -Path "$($ds)" -Name CurrentActiveBit -ErrorAction SilentlyContinue).'CurrentActiveBit'
+                                    $dn = (Get-ItemProperty -Path "$($ds)\$($ab)" -Name DomainName).'DomainName'
+                                    $p = "C:\Windows\system32\GroupPolicy\DataStore\$($ab)\SysVol\$($dn)\Policies\$($gn)\Machine\Scripts\$($t)"
+                                } else {
+                                    $p  = Join-Path -Path "$((Get-ItemProperty -Path $subkey -Name FileSysPath -ErrorAction SilentlyContinue).FileSysPath)" -ChildPath "Scripts\$($t)"
+                                }
+                                try {
+                                    [pscustomobject]@{
+                                        Path = Join-Path -Path $subkey -ChildPath $_
+                                        Item = 'Script'
+                                        Value = Join-Path -Path $p -ChildPath "$((Get-ItemProperty -Path (Join-Path -Path $subkey -ChildPath $_) -Name 'Script' -ErrorAction Stop).'Script')"
+                                        Category = 'Logon'
+                                    }
+                                } catch {}
                             }
                         }
                     }
@@ -1218,15 +1237,31 @@ Begin {
                     # Local GPO scripts
                     'Startup','Shutdown','Logon','Logoff' |
                     ForEach-Object -Process {
+                        $t = $_
                         $key = "$($Hive)\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\$($_)"
                         if (Test-Path -Path $key) {
                             (Get-Item -Path $key).GetSubKeyNames() |
                             ForEach-Object -Process {
                                 $subkey = (Join-Path -Path $key -ChildPath $_)
+                                $gn = (Get-ItemProperty -Path $subkey -Name GPOName -ErrorAction SilentlyContinue).'GPOName'
                                 (Get-Item -Path $subkey).GetSubKeyNames() |
                                 ForEach-Object -Process {
-                                    # (Join-Path -Path $subkey -ChildPath $_)
-                                    Get-RegValue -Path (Join-Path -Path $subkey -ChildPath $_) -Name 'script' @Category
+                                    if ($gn -match '^{[A-F0-9-]+}') {
+                                        $ds = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\DataStore\Machine'
+                                        $ab = (Get-ItemProperty -Path "$($ds)" -Name CurrentActiveBit -ErrorAction SilentlyContinue).'CurrentActiveBit'
+                                        $dn = (Get-ItemProperty -Path "$($ds)\$($ab)" -Name DomainName).'DomainName'
+                                        $p = "C:\Windows\system32\GroupPolicy\DataStore\$($ab)\SysVol\$($dn)\Policies\$($gn)\Machine\Scripts\$($t)"
+                                    } else {
+                                        $p  = Join-Path -Path "$((Get-ItemProperty -Path $subkey -Name FileSysPath -ErrorAction SilentlyContinue).FileSysPath)" -ChildPath "Scripts\$($t)"
+                                    }
+                                    try {
+                                        [pscustomobject]@{
+                                            Path = Join-Path -Path $subkey -ChildPath $_
+                                            Item = 'Script'
+                                            Value = Join-Path -Path $p -ChildPath "$((Get-ItemProperty -Path (Join-Path -Path $subkey -ChildPath $_) -Name 'Script' -ErrorAction Stop).'Script')"
+                                            Category = 'Logon'
+                                        }
+                                    } catch {}
                                 }
                             }
                         }
