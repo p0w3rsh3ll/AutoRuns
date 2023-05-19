@@ -1055,12 +1055,31 @@ Begin {
 
                 # Local GPO scripts
                 'Startup','Shutdown','Logon','Logoff' | ForEach-Object -Process {
+                    $t = $_
                     $key = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\$($_)"
                     if (Test-Path -Path $key) {
-                        (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
+                        (Get-Item -Path $key).GetSubKeyNames() |
+                        ForEach-Object -Process {
                             $subkey = (Join-Path -Path $key -ChildPath $_)
-                            (Get-Item -Path $subkey).GetSubKeyNames() | ForEach-Object -Process {
-                                Get-RegValue -Path (Join-Path -Path $subkey -ChildPath $_) -Name 'script' @Category
+                            $gn = (Get-ItemProperty -Path $subkey -Name GPOName -ErrorAction SilentlyContinue).'GPOName'
+                            (Get-Item -Path $subkey).GetSubKeyNames() |
+                            ForEach-Object -Process {
+                                if ($gn -match '^{[A-F0-9-]+}') {
+                                    $ds = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\DataStore\Machine'
+                                    $ab = (Get-ItemProperty -Path "$($ds)" -Name CurrentActiveBit -ErrorAction SilentlyContinue).'CurrentActiveBit'
+                                    $dn = (Get-ItemProperty -Path "$($ds)\$($ab)" -Name DomainName).'DomainName'
+                                    $p = "C:\Windows\system32\GroupPolicy\DataStore\$($ab)\SysVol\$($dn)\Policies\$($gn)\Machine\Scripts\$($t)"
+                                } else {
+                                    $p  = Join-Path -Path "$((Get-ItemProperty -Path $subkey -Name FileSysPath -ErrorAction SilentlyContinue).FileSysPath)" -ChildPath "Scripts\$($t)"
+                                }
+                                try {
+                                    [pscustomobject]@{
+                                        Path = Join-Path -Path $subkey -ChildPath $_
+                                        Item = 'Script'
+                                        Value = Join-Path -Path $p -ChildPath "$((Get-ItemProperty -Path (Join-Path -Path $subkey -ChildPath $_) -Name 'Script' -ErrorAction Stop).'Script')"
+                                        Category = 'Logon'
+                                    }
+                                } catch {}
                             }
                         }
                     }
@@ -1218,15 +1237,31 @@ Begin {
                     # Local GPO scripts
                     'Startup','Shutdown','Logon','Logoff' |
                     ForEach-Object -Process {
+                        $t = $_
                         $key = "$($Hive)\Software\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\$($_)"
                         if (Test-Path -Path $key) {
                             (Get-Item -Path $key).GetSubKeyNames() |
                             ForEach-Object -Process {
                                 $subkey = (Join-Path -Path $key -ChildPath $_)
+                                $gn = (Get-ItemProperty -Path $subkey -Name GPOName -ErrorAction SilentlyContinue).'GPOName'
                                 (Get-Item -Path $subkey).GetSubKeyNames() |
                                 ForEach-Object -Process {
-                                    # (Join-Path -Path $subkey -ChildPath $_)
-                                    Get-RegValue -Path (Join-Path -Path $subkey -ChildPath $_) -Name 'script' @Category
+                                    if ($gn -match '^{[A-F0-9-]+}') {
+                                        $ds = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\DataStore\Machine'
+                                        $ab = (Get-ItemProperty -Path "$($ds)" -Name CurrentActiveBit -ErrorAction SilentlyContinue).'CurrentActiveBit'
+                                        $dn = (Get-ItemProperty -Path "$($ds)\$($ab)" -Name DomainName).'DomainName'
+                                        $p = "C:\Windows\system32\GroupPolicy\DataStore\$($ab)\SysVol\$($dn)\Policies\$($gn)\Machine\Scripts\$($t)"
+                                    } else {
+                                        $p  = Join-Path -Path "$((Get-ItemProperty -Path $subkey -Name FileSysPath -ErrorAction SilentlyContinue).FileSysPath)" -ChildPath "Scripts\$($t)"
+                                    }
+                                    try {
+                                        [pscustomobject]@{
+                                            Path = Join-Path -Path $subkey -ChildPath $_
+                                            Item = 'Script'
+                                            Value = Join-Path -Path $p -ChildPath "$((Get-ItemProperty -Path (Join-Path -Path $subkey -ChildPath $_) -Name 'Script' -ErrorAction Stop).'Script')"
+                                            Category = 'Logon'
+                                        }
+                                    } catch {}
                                 }
                             }
                         }
@@ -2003,17 +2038,17 @@ Begin {
                                     break
                                 }
                                 # Windir\system32
-                                '^"?(%(w|W)in(d|D)ir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\.*\.(exe|vbs)' {
+                                '^"?(%(w|W)(i|I)(n|N)(d|D)(i|I)(r|R)%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\.[^\\]+\.(exe|vbs)' {
                                     Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
-                                        @([regex]'^"?(%(w|W)in(d|D)ir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\(?<File>.*\.(exe|vbs))("|\s)?').Matches($_) |
+                                        @([regex]'^"?(%(w|W)(i|I)(n|N)(d|D)(i|I)(r|R)%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\(?<File>.[^\\]+\.(exe|vbs))("|\s)?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
                                 }
                                 # windir\somethingelse
-                                '^(%windir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\.*\\.*\.(exe|vbs)' {
+                                '^"?(%(w|W)(i|I)(n|N)(d|D)(i|I)(r|R)%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\.*\\.*\.(exe|vbs)' {
                                     Join-Path -Path "$($env:systemroot)" -ChildPath (
-                                        @([regex]'^(%windir%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(?<File>.*\\.*\.(exe|vbs))(\s)?').Matches($_) |
+                                        @([regex]'^"?(%(w|W)(i|I)(n|N)(d|D)(i|I)(r|R)%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(?<File>.*\\.*\.(exe|vbs))(\s)?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
@@ -2021,17 +2056,32 @@ Begin {
                                 '^%localappdata%\\Microsoft\\OneDrive\\OneDriveStandaloneUpdater\.exe\s/reporting' {
                                     $s = $Item.Item -replace 'OneDrive\sReporting\sTask-',''
                                     $f = $allusers | Where-Object { $_.SID -eq $s }
-                                    Join-Path -Path "$($f.ProfilePath)\AppData\Local" -ChildPath 'Microsoft\OneDrive\OneDriveStandaloneUpdater.exe'
+                                    if ($f) {
+                                        Join-Path -Path "$($f.ProfilePath)\AppData\Local" -ChildPath 'Microsoft\OneDrive\OneDriveStandaloneUpdater.exe'
+                                    } else {
+                                     if (Test-isValidSid -SID $s) {
+                                        Join-Path -Path "C:\Users\$(((Get-UserNameFromSID -SID $s) -split '\\')[1])" -ChildPath 'AppData\Local\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe'
+                                     } else {
+                                        'AppData\Local\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe'
+                                     }
+                                    }
                                     break
                                 }
                                 # localappdata variable
                                 '^%localappdata%' {
                                     $s = $Item.Item -replace 'OneDrive\sStandalone\sUpdate\sTask-',''
                                     $f = $allusers | Where-Object { $_.SID -eq $s }
-                                    Join-Path -Path "$($f.ProfilePath)\AppData\Local" -ChildPath (
-                                        @([regex]'^%localappdata%\\(?<File>.*)').Matches($_) |
-                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
-                                    )
+                                    $cp = @([regex]'^%localappdata%\\(?<File>.*)').Matches($_) |
+                                    Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    if ($f) {
+                                        Join-Path -Path "$($f.ProfilePath)\AppData\Local" -ChildPath $cp
+                                    } else {
+                                     if (Test-isValidSid -SID $s) {
+                                        Join-Path -Path "C:\Users\$(((Get-UserNameFromSID -SID $s) -split '\\')[1])\AppData\Local" -ChildPath $cp
+                                     } else {
+                                        $cp
+                                     }
+                                    }
                                     break
                                 }
                                 # special W7 case with media center
@@ -2218,7 +2268,7 @@ Begin {
                                     Join-Path -Path "$($env:systemroot)" -ChildPath $_
                                     break;
                                 }
-                                '^\\\?\?\\C:\\Windows\\system32\\drivers' {
+                                '^\\\?\?\\[A-Z]:\\' {
                                     $_ -replace '\\\?\?\\',''
                                     break;
                                 }
@@ -2238,10 +2288,6 @@ Begin {
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break
-                                }
-                                '^(\\\?\?\\)?C:\\ProgramData' {
-                                    $_ -replace '\\\?\?\\',''
-                                    break;
                                 }
                                 '^"?C:\\ProgramData' {
                                     $_ -replace '"',''
@@ -2452,9 +2498,9 @@ Begin {
                                         break
                                     }
                                     # C:\Users with a quote
-                                    '^"C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})"' {
+                                    '^"C:\\[uU][sS][eE][rR][sS]\\(?<File>.[^"]+\.[A-Za-z0-9]{1,})"' {
                                         Join-Path -Path 'C:\Users' -ChildPath (
-                                            @([regex]'^"C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})"').Matches($_) |
+                                            @([regex]'^"C:\\[uU][sS][eE][rR][sS]\\(?<File>.[^"]+\.[A-Za-z0-9]{1,})"').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                         )
                                         break

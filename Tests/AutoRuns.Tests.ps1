@@ -41,7 +41,7 @@ InModuleScope FakeAutoRuns {
 
 #region Boot Execute
 
-Describe 'Testing Get-PSPrettyAutorun for BootExecute' {
+Describe 'Testing Get-PSPrettyAutorun for BootExecute' -Tag 'BootExecute' {
 
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/100
     It 'issue 100 should be solved' {
@@ -61,7 +61,7 @@ Describe 'Testing Get-PSPrettyAutorun for BootExecute' {
 
 #region Print Monitors
 
-Describe 'Testing Get-PSPrettyAutorun for Print Monitors' {
+Describe 'Testing Get-PSPrettyAutorun for Print Monitors'  -Tag 'PrintMonitorDLLs' {
 
     #  Fix the ImagePath of Printer port #74
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/74
@@ -82,7 +82,7 @@ Describe 'Testing Get-PSPrettyAutorun for Print Monitors' {
 
 #region ScheduledTasks
 
-Describe 'Testing ScheduledTasks' {
+Describe 'Testing ScheduledTasks' -Tag 'ScheduledTasks' {
 
     Context 'Inside Add-PSAutoRunHash' {
         It 'issue 80 should be solved' {
@@ -172,6 +172,49 @@ Describe 'Testing ScheduledTasks' {
     }
 
     Context 'Inside Get-PSPrettyAutorun' {
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/114
+        It 'issue #114 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\WINDOWS\system32\Tasks\\NahimicSvc32Run'
+                    Item     = 'NahimicSvc32Run'
+                    Category = 'Task'
+                    Value    = '"C:\Windows\SysWOW64\NahimicSvc32.exe" $(Arg0) $(Arg1) $(Arg2) $(Arg3) $(Arg4) $(Arg5) $(Arg6) $(Arg7)'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Windows\SysWOW64\NahimicSvc32.exe' | should be $true
+        }
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/115
+        It 'issue #115 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\WINDOWS\system32\Tasks\Microsoft\Windows\PI\SecureBootEncodeUEFI'
+                    Item     = 'SecureBootEncodeUEFI'
+                    Category = 'Task'
+                    Value    = '%WINDIR%\system32\SecureBootEncodeUEFI.exe'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\WINDOWS\system32\SecureBootEncodeUEFI.exe' | should be $true
+        }
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/109
+        # Related to  issue #96 and 101
+        It 'issue #109 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = "C:\WINDOWS\system32\Tasks\OneDrive Standalone Update Task-$(([System.Security.Principal.NTAccount]'Administrator').Translate([System.Security.Principal.SecurityIdentifier]).Value)"
+                    Item     = "OneDrive Standalone Update Task-$(([System.Security.Principal.NTAccount]'Administrator').Translate([System.Security.Principal.SecurityIdentifier]).Value)"
+                    Category = 'Task'
+                    Value    = '%localappdata%\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Users\Administrator\AppData\Local\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe' | should be $true
+        }
 
         # https://github.com/p0w3rsh3ll/AutoRuns/issues/107
         It 'issue #107 should be solved' {
@@ -270,7 +313,7 @@ Describe 'Testing ScheduledTasks' {
             } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
 
             $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
-            $i -eq '\AppData\Local\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe' | should be $true
+            $i -eq 'AppData\Local\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe' | should be $true
         }
 
         # Dropbox tasks #63
@@ -687,7 +730,7 @@ Describe 'Testing ScheduledTasks' {
 
 #region WMI
 
-Describe 'Testing Get-PSPrettyAutorun for WMI' {
+Describe 'Testing Get-PSPrettyAutorun for WMI' -Tag 'WMI' {
 
     # WMI provider issue: MSiSCSIInitiatorProvider #51
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/51
@@ -719,7 +762,20 @@ Describe 'Testing Get-PSPrettyAutorun for WMI' {
 
 #region Logon
 
-Describe 'Testing Get-PSPrettyAutorun for Logon' {
+Describe 'Testing Get-PSPrettyAutorun for Logon' -Tag 'Logon' {
+
+    It 'issue 112 should be solved' {
+        Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKCU:\Software\\Microsoft\Windows\CurrentVersion\Run'
+                Item     = 'FACEIT'
+                Category = 'Logon'
+                Value    = '"C:\Users\brand\AppData\Local\FACEIT\update.exe" --processStart "FACEIT.exe"'
+            }
+        } -ParameterFilter { $Logon -eq [switch]::Present }
+        $i = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun).ImagePath
+        $i -eq 'C:\Users\brand\AppData\Local\FACEIT\update.exe' | should be $true
+    }
 
     It 'issue 84 should be solved' {
         Mock -CommandName Get-PSRawAutoRun -MockWith {
@@ -892,7 +948,7 @@ Describe 'Testing Get-PSPrettyAutorun for Logon' {
 
 #region AppinitDLLs
 
-Describe 'Testing Get-PSPrettyAutorun for AppinitDLLs' {
+Describe 'Testing Get-PSPrettyAutorun for AppinitDLLs' -Tag 'AppinitDLLs' {
 
     <#
     From https://support.microsoft.com/en-us/help/197571/working-with-the-appinit-dlls-registry-value:
@@ -943,7 +999,7 @@ Describe 'Testing Get-PSPrettyAutorun for AppinitDLLs' {
 
 #region ServicesAndDrivers
 
-Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' {
+Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' -Tag 'ServicesAndDrivers' {
 
     # issue with ibtsiva (see also issue 53 below)
     # It 'issue file with no extension should be solved' {
@@ -978,6 +1034,34 @@ Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' {
     #     # Write-Verbose -Message "-$($i)-" -Verbose
     #     $i -eq 'C:\Windows\system32\ibtsiva.EXE' | should be $true
     # }
+
+    # https://github.com/p0w3rsh3ll/AutoRuns/issues/113
+    It 'issue #113 should be solved' {
+        Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKLM:\System\CurrentControlSet\Services\atvi-randgrid_sr'
+                Item     = 'ImagePath'
+                Category = 'Drivers'
+                Value    = '\??\B:\SteamLibrary\steamapps\common\Call of Duty HQ\randgrid.sys'
+            }
+        } -ParameterFilter { $ServicesAndDrivers -eq [switch]::Present }
+        $i = (Get-PSRawAutoRun -ServicesAndDrivers | Get-PSPrettyAutorun).ImagePath
+        $i -eq 'B:\SteamLibrary\steamapps\common\Call of Duty HQ\randgrid.sys' | should be $true
+    }
+
+    # https://github.com/p0w3rsh3ll/AutoRuns/issues/110
+    It 'issue #110 should be solved' {
+        Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKLM:\System\CurrentControlSet\Services\xhunter1'
+                Item     = 'ImagePath'
+                Category = 'Drivers'
+                Value    = '\??\C:\WINDOWS\xhunter1.sys'
+            }
+        } -ParameterFilter { $ServicesAndDrivers -eq [switch]::Present }
+        $i = (Get-PSRawAutoRun -ServicesAndDrivers | Get-PSPrettyAutorun).ImagePath
+        $i -eq 'C:\WINDOWS\xhunter1.sys' | should be $true
+    }
 
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/98
     It 'issue 98 should be solved' {
@@ -1090,7 +1174,7 @@ Describe 'Testing Get-PSPrettyAutorun for ServicesAndDrivers' {
 
 #region Image Hijacks
 
-Describe 'Testing Get-PSPrettyAutorun for ImageHijacks' {
+Describe 'Testing Get-PSPrettyAutorun for ImageHijacks' -Tag 'ImageHijacks' {
 
     Context 'Inside Get-PSRawAutoRun' {
 
@@ -1153,7 +1237,7 @@ Describe 'Testing Get-PSPrettyAutorun for ImageHijacks' {
 
 #region OfficeAddins
 
-Describe 'Testing Get-PSPrettyAutorun for OfficeAddins' {
+Describe 'Testing Get-PSPrettyAutorun for OfficeAddins' -Tag 'OfficeAddins' {
 
     # OfficeAddins don't have an imagepath when HKCU hive is in use #26
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/26
@@ -1225,7 +1309,7 @@ Describe 'Testing Get-PSPrettyAutorun for OfficeAddins' {
 
 #region KnownDLLs
 
-Describe 'Testing Get-PSPrettyAutorun for KnownDLLs' {
+Describe 'Testing Get-PSPrettyAutorun for KnownDLLs' -Tag 'KnownDLLs' {
 
     # No size, version for Known dlls where image path is set to C:\WINDOWS\Syswow64 #21
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/21
