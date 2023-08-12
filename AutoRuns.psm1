@@ -2155,6 +2155,14 @@ Begin {
                                     )
                                     break
                                 }
+                                # C:\Windows\System32\DriverStore\FileRepository\
+                                'C:\\Windows\\System32\\DriverStore\\FileRepository\\' {
+                                    Join-Path -Path 'C:\Windows\System32\DriverStore\FileRepository' -ChildPath (
+                                        @([regex]'C:\\Windows\\System32\\DriverStore\\FileRepository\\(?<File>.*\.[a-z0-9]{1,})\s?').Matches($_) |
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )
+                                    break
+                                }
                                 # Users
                                 '^"?C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})("|\s)?' {
                                     Join-Path -Path 'C:\Users' -ChildPath (

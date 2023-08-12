@@ -173,6 +173,20 @@ Describe 'Testing ScheduledTasks' -Tag 'ScheduledTasks' {
 
     Context 'Inside Get-PSPrettyAutorun' {
 
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/118
+        It 'issue #118 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\Windows\system32\Tasks\\RtkAudUService64_BG'
+                    Item     = 'RtkAudUService64_BG'
+                    Category = 'Task'
+                    Value    = '""C:\Windows\System32\DriverStore\FileRepository\realtekservice.inf_amd64_5d66730f577c60c7\RtkAudUService64.exe"" -background'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Windows\System32\DriverStore\FileRepository\realtekservice.inf_amd64_5d66730f577c60c7\RtkAudUService64.exe' | should be $true
+        }
+
         # https://github.com/p0w3rsh3ll/AutoRuns/issues/114
         It 'issue #114 should be solved' {
             Mock -CommandName Get-PSRawAutoRun -MockWith {
