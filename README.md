@@ -175,20 +175,16 @@ gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessin
 
 #### Coding best practices
 - [x] Use PSScriptAnalyzer module to validate the code follows best practices
-- [ ] Write Pester tests for this module
+- [x] Write Pester tests for this module
 
 #### OS and Software compatibility
 - [x] Test the module in PowerShell Core 7.x (latest)
-- [ ] Test the module on Nano and get rid of Add-Member cmdlet
 - [ ] Test the module on various versions of Windows 10
-  - [x] 20H2
-  - [x] 21H1
   - [x] 21H2
   - [x] 22H2
 - [x] Test the module on various versions of Windows 11
   - [x] 21H2
   - [x] 22H2
-- [ ] Test the module on Windows RT
 - [ ] Review Office Add-ins code with Office x86 and x64 versions
 
 #### General improvements
