@@ -173,6 +173,20 @@ Describe 'Testing ScheduledTasks' -Tag 'ScheduledTasks' {
 
     Context 'Inside Get-PSPrettyAutorun' {
 
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/121
+        It 'issue #118 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\Windows\system32\Tasks\Microsoft\SqlServerExtension\SqlServerExtensionPermissionProvider'
+                    Item     = 'SqlServerExtensionPermissionProvider'
+                    Category = 'Task'
+                    Value    = 'C:\Packages\Plugins\Microsoft.AzureData.WindowsAgent.SqlServer\1.1.2504.99\SqlServerExtensionDeployer.exe Setup'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Packages\Plugins\Microsoft.AzureData.WindowsAgent.SqlServer\1.1.2504.99\SqlServerExtensionDeployer.exe' | should be $true
+        }
+
         # https://github.com/p0w3rsh3ll/AutoRuns/issues/118
         It 'issue #118 should be solved' {
             Mock -CommandName Get-PSRawAutoRun -MockWith {

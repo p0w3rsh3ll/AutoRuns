@@ -2163,6 +2163,11 @@ Begin {
                                     )
                                     break
                                 }
+                                'C:\\Packages\\.+\.[a-z0-9]{1,}\s?' {
+                                    @([regex]'(?<File>C:\\Packages\\.+\.[a-z0-9]{1,})\s?').Matches($_) |
+                                    Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    break
+                                }
                                 # Users
                                 '^"?C:\\[uU][sS][eE][rR][sS]\\(?<File>.+\.[A-Za-z0-9]{1,})("|\s)?' {
                                     Join-Path -Path 'C:\Users' -ChildPath (
