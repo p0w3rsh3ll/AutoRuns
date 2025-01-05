@@ -1603,8 +1603,10 @@ Begin {
                 #region Print monitors
 	            $Category = @{ Category = 'Print Monitors'}
 	            $key = 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors'
-                (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
+	            if (Test-Path -Path "$($key)" -PathType Container) {
+                     (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
 		            Get-RegValue -Path "$key\$($_)" -Name 'Driver' @Category
+	             }
 	            }
 
                 Write-Verbose -Message 'Looking for Print Providers DLLs entries'
