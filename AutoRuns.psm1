@@ -1230,6 +1230,7 @@ Begin {
                 $null,'Wow6432Node' | Foreach-Object { Get-RegValue -Path "HKLM:\SOFTWARE\$($_)\Microsoft\Windows CE Services\AutoStartDisconnect" -Name '*' @Category }
                 $null,'Wow6432Node' | Foreach-Object { Get-RegValue -Path "HKLM:\SOFTWARE\$($_)\Microsoft\Windows CE Services\AutoStartOnDisconnect" -Name '*' @Category }
 
+                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\ServerCore\Shell Launcher' -Name 'shell' @Category
                 #endregion Logon
 
                 #region User Logon
@@ -2553,6 +2554,12 @@ Begin {
                                             @([regex]'C:\\[pP][rR][oO][gG][rR][aA][mM][dD][aA][tT][aA]\\(?<File>.+\.[A-Za-z0-9]{1,})').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                         )
+                                        break
+                                    }
+                                    # servercoreshelllaunch.bat
+                                    '^servercoreshelllaunch\.bat' {
+                                        Join-Path -Path "$($env:SystemRoot)\system32" -ChildPath 'servercoreshelllaunch.bat'
+                                        break
                                     }
                                     default {
                                         Write-Verbose -Message "default: $_"

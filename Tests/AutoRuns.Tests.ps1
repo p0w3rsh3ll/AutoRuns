@@ -792,6 +792,19 @@ Describe 'Testing Get-PSPrettyAutorun for WMI' -Tag 'WMI' {
 
 Describe 'Testing Get-PSPrettyAutorun for Logon' -Tag 'Logon' {
 
+    It 'issue 125 should be solved' {
+        Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKLM:\SOFTWARE\Microsoft\ServerCore\Shell Launcher'
+                Item     = 'shell'
+                Category = 'Logon'
+                Value    = 'servercoreshelllaunch.bat'
+            }
+        } -ParameterFilter { $Logon -eq [switch]::Present }
+        $i = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun).ImagePath
+        $i -eq 'C:\Windows\system32\servercoreshelllaunch.bat' | should be $true
+    }
+
     It 'issue 112 should be solved' {
         Mock -CommandName Get-PSRawAutoRun -MockWith {
             return [PSCustomObject]@{
