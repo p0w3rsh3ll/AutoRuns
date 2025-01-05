@@ -854,11 +854,13 @@ Begin {
 	            }
 
                 # Htmlfile
-                [pscustomobject]@{
+                if (Test-Path -Path 'HKLM:\SOFTWARE\Classes\htmlfile\shell\open\command' -PathType Container) {
+                 [pscustomobject]@{
                     Path = 'HKLM:\SOFTWARE\Classes\htmlfile\shell\open\command'
                     Item = 'htmlfile'
                     Value = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Classes\htmlfile\shell\open\command' -Name '(default)').'(default)'
                     Category = 'Image Hijacks'
+                 }
                 }
                 #endregion Image Hijacks
 
