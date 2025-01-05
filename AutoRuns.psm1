@@ -1767,13 +1767,16 @@ Begin {
 
 	            'Credential Providers','Credential Provider Filters','PLAP Providers' | ForEach-Object {
 		            $key = Join-Path -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication' -ChildPath $_
-		            (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
-                        [pscustomobject]@{
-                            Path = $key
-                            Item = $_
-                            Value = (Get-ItemProperty -Path (Join-Path -Path 'HKLM:\SOFTWARE\Classes\CLSID' -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
-                            Category = 'Winlogon'
-                        }
+		            if (Test-Path -Path "$($key)" -PathType Container) {
+		             (Get-Item -Path $key).GetSubKeyNames() |
+		             ForEach-Object -Process {
+                              [pscustomobject]@{
+                               Path = $key
+                               Item = $_
+                               Value = (Get-ItemProperty -Path (Join-Path -Path 'HKLM:\SOFTWARE\Classes\CLSID' -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
+                               Category = 'Winlogon'
+                              }
+		             }
 		            }
 	            }
                 <# # deprecated
