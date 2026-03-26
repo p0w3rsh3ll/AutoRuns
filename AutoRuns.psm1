@@ -2079,7 +2079,7 @@ Begin {
                                 '^%localappdata%' {
                                     $s = $Item.Item -replace 'OneDrive\sStandalone\sUpdate\sTask-',''
                                     $f = $allusers | Where-Object { $_.SID -eq $s }
-                                    $cp = @([regex]'^%localappdata%\\(?<File>.*)').Matches($_) |
+                                    $cp = @([regex]'(?i)^%localappdata%\\(?<File>.*\.exe)\s?').Matches($_) |
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     if ($f) {
                                         Join-Path -Path "$($f.ProfilePath)\AppData\Local" -ChildPath $cp

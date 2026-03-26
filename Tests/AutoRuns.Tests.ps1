@@ -173,6 +173,21 @@ Describe 'Testing ScheduledTasks' -Tag 'ScheduledTasks' {
 
     Context 'Inside Get-PSPrettyAutorun' {
 
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/129
+        It 'issue #129 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\Windows\system32\Tasks\App Explorer'
+                    Item     = 'App Explorer'
+                    Category = 'Task'
+                    Value    = '%LOCALAPPDATA%\Host App Service\Engine\HostAppServiceUpdater.exe /LOGON'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'Host App Service\Engine\HostAppServiceUpdater.exe' | should be $true
+        }
+
         # https://github.com/p0w3rsh3ll/AutoRuns/issues/121
         It 'issue #118 should be solved' {
             Mock -CommandName Get-PSRawAutoRun -MockWith {
