@@ -1,4 +1,4 @@
-name: 🐞 Bug
+name: "🐞 Bug report"
 description: Report a reproducible bug with steps, expected behavior, and environment details.
 title: "[Bug]: title "
 labels: ["Bug", "Needs Triage"]
