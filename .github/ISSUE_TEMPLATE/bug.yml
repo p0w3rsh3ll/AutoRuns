@@ -2,8 +2,7 @@ name: 🐞 Bug
 description: Report a reproducible bug with steps, expected behavior, and environment details.
 title: "[Bug]: title "
 labels: ["Bug", "Needs Triage"]
-assignees:
- - p0w3rsh3ll
+assignees: "p0w3rsh3ll"
 body:
   - type: markdown
     attributes:
