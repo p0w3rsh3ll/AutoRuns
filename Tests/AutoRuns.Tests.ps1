@@ -1404,6 +1404,26 @@ Describe 'Testing Get-PSPrettyAutorun for KnownDLLs' -Tag 'KnownDLLs' {
 #region Other
 
 Describe 'Other' {
+
+    Context 'Inside Get-PSRawAutoRun' {
+
+        # Persistence using AMSI provider #130
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/130
+        # reg.exe add "HKLM\SOFTWARE\Microsoft\AMSI\Providers\{2E5D8A62-77F9-4F7B-A90C-2722480139B2}" /ve
+        It 'issue 130 should be solved' {
+         Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKLM:\SOFTWARE\Microsoft\AMSI\Providers\{2E5D8A62-77F9-4F7B-A90C-2722480139B2}'
+                Item     = 'ImagePath'
+                Category = 'AMSI Providers'
+                Value    = 'C:\temp\AmsiProvider.dll'
+            }
+         } -ParameterFilter { $AMSIProviders -eq [switch]::Present }
+         $i = (Get-PSRawAutoRun -AMSIProviders | Get-PSPrettyAutorun).ImagePath
+         # Write-Verbose -Message "-$($i)-" -Verbose
+         $i -eq 'C:\temp\AmsiProvider.dll' | should be $true
+        }
+    }
     # When ShowFileHash and VerifyDigitalSignature switches are used, don't drop items #34
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/34
     # Get-PSAutorun -ShowFileHash -VerifyDigitalSignature
