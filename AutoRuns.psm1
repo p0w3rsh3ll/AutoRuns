@@ -63,6 +63,9 @@ Function Get-PSAutorun {
     .PARAMETER PSProfiles
         Switch to gather artifacts from the PowerShell profiles category.
 
+    .PARAMETER AMSIProviders
+        Switch to gather artifacts from the AMSI providers category.
+
     .PARAMETER ShowFileHash
         Switch to enable and display MD5, SHA1 and SHA2 file hashes.
 
@@ -108,6 +111,7 @@ Function Get-PSAutorun {
         [Switch]$Winlogon,
         [Switch]$WMI,
         [Switch]$PSProfiles,
+        [Switch]$AMSIProviders,
 
         [Parameter(ParameterSetName='Plain')]
         [Switch]$Raw,
@@ -507,6 +511,7 @@ Begin {
             [Switch]$Winlogon,
             [Switch]$WMI,
             [Switch]$PSProfiles,
+            [Switch]$AMSIProviders,
             [Switch]$ShowFileHash,
             [Switch]$VerifyDigitalSignature,
             [Switch]$Raw,
@@ -1936,6 +1941,23 @@ Begin {
                     }
                 }
             }
+            if ($All -or $AMSIProviders) {
+                $Category = @{ Category = 'AMSI Providers'}
+                #region AMSI Providers
+                $key = 'HKLM:\SOFTWARE\Microsoft\AMSI\Providers'
+                if (Test-Path -Path "$($key)" -PathType Container) {
+                 (Get-Item -Path $key).GetSubKeyNames() |
+                 ForEach-Object -Process {
+                  [pscustomobject]@{
+                   Path = $key
+                   Item = $_
+                   Value = (Get-ItemProperty -Path (Join-Path -Path 'HKLM:\SOFTWARE\Classes\CLSID' -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
+                   Category = 'AMSI Providers'
+                  }
+                 }
+                }
+                #endregion AMSI Providers
+            }
         }
         End {
         }
@@ -2720,6 +2742,11 @@ Begin {
                     }
                     'PowerShell Profiles' {
                         $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value "$($Item.Value)" -Force -PassThru
+                        break
+                    }
+                    'AMSI Providers' {
+                        $v = "$($Item.Value)" -replace '"',''
+                        $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value "$($v)" -Force -PassThru
                         break
                     }
                     default {
