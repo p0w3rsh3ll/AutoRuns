@@ -22,7 +22,7 @@
 
 ### Install the module
 
-The module is located on the [PowerShellGallery](https://www.powershellgallery.com/packages/AutoRuns/14.0.2)
+The module is located on the [PowerShellGallery](https://www.powershellgallery.com/packages/AutoRuns/14.3.1)
 
 ```powershell
 # Check the module on powershellgallery.com using PowerShellGet cmdlets
