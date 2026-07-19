@@ -63,6 +63,12 @@ Function Get-PSAutorun {
     .PARAMETER PSProfiles
         Switch to gather artifacts from the PowerShell profiles category.
 
+    .PARAMETER AMSIProviders
+        Switch to gather artifacts from the AMSI providers category.
+
+    .PARAMETER PackagedApp
+        Switch to gather artifacts from the Packaged App category.
+
     .PARAMETER ShowFileHash
         Switch to enable and display MD5, SHA1 and SHA2 file hashes.
 
@@ -108,6 +114,8 @@ Function Get-PSAutorun {
         [Switch]$Winlogon,
         [Switch]$WMI,
         [Switch]$PSProfiles,
+        [Switch]$AMSIProviders,
+        [Switch]$PackagedApp,
 
         [Parameter(ParameterSetName='Plain')]
         [Switch]$Raw,
@@ -507,6 +515,8 @@ Begin {
             [Switch]$Winlogon,
             [Switch]$WMI,
             [Switch]$PSProfiles,
+            [Switch]$AMSIProviders,
+            [Switch]$PackagedApp,
             [Switch]$ShowFileHash,
             [Switch]$VerifyDigitalSignature,
             [Switch]$Raw,
@@ -854,11 +864,13 @@ Begin {
 	            }
 
                 # Htmlfile
-                [pscustomobject]@{
+                if (Test-Path -Path 'HKLM:\SOFTWARE\Classes\htmlfile\shell\open\command' -PathType Container) {
+                 [pscustomobject]@{
                     Path = 'HKLM:\SOFTWARE\Classes\htmlfile\shell\open\command'
                     Item = 'htmlfile'
                     Value = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Classes\htmlfile\shell\open\command' -Name '(default)').'(default)'
                     Category = 'Image Hijacks'
+                 }
                 }
                 #endregion Image Hijacks
 
@@ -1228,6 +1240,7 @@ Begin {
                 $null,'Wow6432Node' | Foreach-Object { Get-RegValue -Path "HKLM:\SOFTWARE\$($_)\Microsoft\Windows CE Services\AutoStartDisconnect" -Name '*' @Category }
                 $null,'Wow6432Node' | Foreach-Object { Get-RegValue -Path "HKLM:\SOFTWARE\$($_)\Microsoft\Windows CE Services\AutoStartOnDisconnect" -Name '*' @Category }
 
+                Get-RegValue -Path 'HKLM:\SOFTWARE\Microsoft\ServerCore\Shell Launcher' -Name 'shell' @Category
                 #endregion Logon
 
                 #region User Logon
@@ -1603,8 +1616,10 @@ Begin {
                 #region Print monitors
 	            $Category = @{ Category = 'Print Monitors'}
 	            $key = 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors'
-                (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
+	            if (Test-Path -Path "$($key)" -PathType Container) {
+                     (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
 		            Get-RegValue -Path "$key\$($_)" -Name 'Driver' @Category
+	             }
 	            }
 
                 Write-Verbose -Message 'Looking for Print Providers DLLs entries'
@@ -1767,13 +1782,16 @@ Begin {
 
 	            'Credential Providers','Credential Provider Filters','PLAP Providers' | ForEach-Object {
 		            $key = Join-Path -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication' -ChildPath $_
-		            (Get-Item -Path $key).GetSubKeyNames() | ForEach-Object -Process {
-                        [pscustomobject]@{
-                            Path = $key
-                            Item = $_
-                            Value = (Get-ItemProperty -Path (Join-Path -Path 'HKLM:\SOFTWARE\Classes\CLSID' -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
-                            Category = 'Winlogon'
-                        }
+		            if (Test-Path -Path "$($key)" -PathType Container) {
+		             (Get-Item -Path $key).GetSubKeyNames() |
+		             ForEach-Object -Process {
+                              [pscustomobject]@{
+                               Path = $key
+                               Item = $_
+                               Value = (Get-ItemProperty -Path (Join-Path -Path 'HKLM:\SOFTWARE\Classes\CLSID' -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
+                               Category = 'Winlogon'
+                              }
+		             }
 		            }
 	            }
                 <# # deprecated
@@ -1928,6 +1946,73 @@ Begin {
                     }
                 }
             }
+            if ($All -or $AMSIProviders) {
+                #region AMSI Providers
+                $Category = @{ Category = 'AMSI Providers'}
+                $key = 'HKLM:\SOFTWARE\Microsoft\AMSI\Providers'
+                if (Test-Path -Path "$($key)" -PathType Container) {
+                 (Get-Item -Path $key).GetSubKeyNames() |
+                 ForEach-Object -Process {
+                  [pscustomobject]@{
+                   Path = $key
+                   Item = $_
+                   Value = (Get-ItemProperty -Path (Join-Path -Path 'HKLM:\SOFTWARE\Classes\CLSID' -ChildPath "$($_)\InprocServer32") -Name '(default)' -ErrorAction SilentlyContinue).'(default)'
+                   Category = 'AMSI Providers'
+                  }
+                 }
+                }
+                #endregion AMSI Providers
+            }
+            if ($All -or $PackagedApp) {
+                #region Packaged App
+                $Category = @{ Category = 'Packaged App'}
+                $Users.ForEach({ $_['Hive']}) |
+                ForEach-Object {
+                        $root = $_
+                        if (Test-Path -Path "$($root)\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData" -PathType Container) {
+                            (Get-Item -Path "$($root)\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData").GetSubKeyNames() |
+                            ForEach-Object {
+                                    $key = (Join-Path -Path "$($root)\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData" -ChildPath "$($_)")
+                                    # Iterate through the subkeys
+                                    (Get-item -Path $key).GetSubKeyNames() |
+                                    Where-Object {
+                                      $_ -notin @('PSR','Schemas','SplashScreen','HAM','PersistedTitleBarData','ApplicationFrame',
+                                      'PersistedPickerData','AppUriHandlers','PersistedStorageItemTable','PackageStateRoamingCollectionId')
+                                    } |
+                                    ForEach-Object {
+                                      $s = $_
+                                      $subkey = Join-Path -Path $key -ChildPath $_
+                                      $appPath = (Get-ItemProperty -Path (Join-Path -Path $key -ChildPath 'Schemas') -Name 'PackageFullName' -ErrorAction SilentlyContinue).PackageFullName
+                                      $appManifest = Join-Path -Path 'C:\Program Files\WindowsApps' -ChildPath "$($appPath)\AppxManifest.xml"
+                                      if (Test-Path -Path $appManifest -PathType Leaf) {
+                                       $xmlManifest = [xml](Get-Content -Path $appManifest -ErrorAction SilentlyContinue)
+                                       if ( (($xmlManifest).Package.Applications.Application.Extensions.Extension |
+                                        Where-Object { $_.Category -eq 'windows.startupTask' }).StartupTask.TaskId -eq "$($s)"
+                                       ) {
+                                        $appxExec = (($xmlManifest).Package.Applications.Application.Extensions.Extension |
+                                        Where-Object { $_.Category -eq 'windows.startupTask' } | Where-Object { $_.StartupTask.TaskId -eq "$($s)"} ).Executable
+                                        if ($null -eq $appxExec) {
+                                         $appxExec = (($xmlManifest).Package.Applications.Application | Where-Object { $_.Extensions.Extension.Category -eq 'windows.startupTask' }).Executable
+                                        }
+                                       } else {
+                                        $appxExec = ($xmlManifest).Package.Applications.Application.Executable
+                                       }
+                                      }
+                                      if ($null -ne (Get-ItemProperty -Path "$($subkey)" -Name 'State' -ErrorAction SilentlyContinue).'State') {
+	                               [pscustomobject]@{
+	                                 Path = $key
+	                                 Item = $_
+	                                 Value = Join-Path -Path 'C:\Program Files\WindowsApps' -ChildPath "$($appPath)\$($appxExec)"
+                                         Category = 'Packaged App';
+	                                }
+                                      }
+                                    }
+
+                            }
+                        }
+                 }
+                 #endregion Packaged App
+            }
         }
         End {
         }
@@ -2071,7 +2156,7 @@ Begin {
                                 '^%localappdata%' {
                                     $s = $Item.Item -replace 'OneDrive\sStandalone\sUpdate\sTask-',''
                                     $f = $allusers | Where-Object { $_.SID -eq $s }
-                                    $cp = @([regex]'^%localappdata%\\(?<File>.*)').Matches($_) |
+                                    $cp = @([regex]'(?i)^%localappdata%\\(?<File>.*\.exe)\s?').Matches($_) |
                                     Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     if ($f) {
                                         Join-Path -Path "$($f.ProfilePath)\AppData\Local" -ChildPath $cp
@@ -2153,6 +2238,27 @@ Begin {
                                         @([regex]'^(C:\\Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)\\(?<File>.*\.[a-z0-9]{1,})\s?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
+                                    break
+                                }
+                                # ProgramFilesx86 with no quote and / instead of \
+                                '^(C:/Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)/' {
+                                    Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
+                                        @([regex]'^(C:/Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)/(?<File>.*\.[a-z0-9]{1,})\s?').Matches($_) |
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )
+                                    break
+                                }
+                                # C:\Windows\System32\DriverStore\FileRepository\
+                                'C:\\Windows\\System32\\DriverStore\\FileRepository\\' {
+                                    Join-Path -Path 'C:\Windows\System32\DriverStore\FileRepository' -ChildPath (
+                                        @([regex]'C:\\Windows\\System32\\DriverStore\\FileRepository\\(?<File>.*\.[a-z0-9]{1,})\s?').Matches($_) |
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )
+                                    break
+                                }
+                                'C:\\Packages\\.+\.[a-z0-9]{1,}\s?' {
+                                    @([regex]'(?<File>C:\\Packages\\.+\.[a-z0-9]{1,})\s?').Matches($_) |
+                                    Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     break
                                 }
                                 # Users
@@ -2533,6 +2639,12 @@ Begin {
                                             @([regex]'C:\\[pP][rR][oO][gG][rR][aA][mM][dD][aA][tT][aA]\\(?<File>.+\.[A-Za-z0-9]{1,})').Matches($_) |
                                             Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                         )
+                                        break
+                                    }
+                                    # servercoreshelllaunch.bat
+                                    '^servercoreshelllaunch\.bat' {
+                                        Join-Path -Path "$($env:SystemRoot)\system32" -ChildPath 'servercoreshelllaunch.bat'
+                                        break
                                     }
                                     default {
                                         Write-Verbose -Message "default: $_"
@@ -2693,6 +2805,16 @@ Begin {
                     }
                     'PowerShell Profiles' {
                         $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value "$($Item.Value)" -Force -PassThru
+                        break
+                    }
+                    'AMSI Providers' {
+                        $v = "$($Item.Value)" -replace '"',''
+                        $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value "$($v)" -Force -PassThru
+                        break
+                    }
+                    'Packaged App' {
+                        $v = "$($Item.Value)" -replace '"',''
+                        $Item | Add-Member -MemberType NoteProperty -Name ImagePath -Value "$($v)" -Force -PassThru
                         break
                     }
                     default {

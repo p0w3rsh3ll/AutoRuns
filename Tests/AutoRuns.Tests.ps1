@@ -173,6 +173,64 @@ Describe 'Testing ScheduledTasks' -Tag 'ScheduledTasks' {
 
     Context 'Inside Get-PSPrettyAutorun' {
 
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/134
+        It 'issue #134 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\WINDOWS\system32\Tasks\Ubisoft\Ubisoft Connect Background Update'
+                    Item     = 'Ubisoft Connect Background Update'
+                    Category = 'Task'
+                    Value    = 'C:/Program Files (x86)/Ubisoft/Ubisoft Game Launcher/upc.exe -upc_scheduled_task update'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            # Write-Verbose -Message "-$($i)-" -Verbose
+            $i -eq 'C:\Program Files (x86)\Ubisoft\Ubisoft Game Launcher\upc.exe' | should be $true
+        }
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/129
+        It 'issue #129 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\Windows\system32\Tasks\App Explorer'
+                    Item     = 'App Explorer'
+                    Category = 'Task'
+                    Value    = '%LOCALAPPDATA%\Host App Service\Engine\HostAppServiceUpdater.exe /LOGON'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'Host App Service\Engine\HostAppServiceUpdater.exe' | should be $true
+        }
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/121
+        It 'issue #118 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\Windows\system32\Tasks\Microsoft\SqlServerExtension\SqlServerExtensionPermissionProvider'
+                    Item     = 'SqlServerExtensionPermissionProvider'
+                    Category = 'Task'
+                    Value    = 'C:\Packages\Plugins\Microsoft.AzureData.WindowsAgent.SqlServer\1.1.2504.99\SqlServerExtensionDeployer.exe Setup'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Packages\Plugins\Microsoft.AzureData.WindowsAgent.SqlServer\1.1.2504.99\SqlServerExtensionDeployer.exe' | should be $true
+        }
+
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/118
+        It 'issue #118 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\Windows\system32\Tasks\\RtkAudUService64_BG'
+                    Item     = 'RtkAudUService64_BG'
+                    Category = 'Task'
+                    Value    = '""C:\Windows\System32\DriverStore\FileRepository\realtekservice.inf_amd64_5d66730f577c60c7\RtkAudUService64.exe"" -background'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\Windows\System32\DriverStore\FileRepository\realtekservice.inf_amd64_5d66730f577c60c7\RtkAudUService64.exe' | should be $true
+        }
+
         # https://github.com/p0w3rsh3ll/AutoRuns/issues/114
         It 'issue #114 should be solved' {
             Mock -CommandName Get-PSRawAutoRun -MockWith {
@@ -764,6 +822,19 @@ Describe 'Testing Get-PSPrettyAutorun for WMI' -Tag 'WMI' {
 
 Describe 'Testing Get-PSPrettyAutorun for Logon' -Tag 'Logon' {
 
+    It 'issue 125 should be solved' {
+        Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKLM:\SOFTWARE\Microsoft\ServerCore\Shell Launcher'
+                Item     = 'shell'
+                Category = 'Logon'
+                Value    = 'servercoreshelllaunch.bat'
+            }
+        } -ParameterFilter { $Logon -eq [switch]::Present }
+        $i = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun).ImagePath
+        $i -eq 'C:\Windows\system32\servercoreshelllaunch.bat' | should be $true
+    }
+
     It 'issue 112 should be solved' {
         Mock -CommandName Get-PSRawAutoRun -MockWith {
             return [PSCustomObject]@{
@@ -1348,6 +1419,26 @@ Describe 'Testing Get-PSPrettyAutorun for KnownDLLs' -Tag 'KnownDLLs' {
 #region Other
 
 Describe 'Other' {
+
+    Context 'Inside Get-PSRawAutoRun' {
+
+        # Persistence using AMSI provider #130
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/130
+        # reg.exe add "HKLM\SOFTWARE\Microsoft\AMSI\Providers\{2E5D8A62-77F9-4F7B-A90C-2722480139B2}" /ve
+        It 'issue 130 should be solved' {
+         Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKLM:\SOFTWARE\Microsoft\AMSI\Providers\{2E5D8A62-77F9-4F7B-A90C-2722480139B2}'
+                Item     = 'ImagePath'
+                Category = 'AMSI Providers'
+                Value    = 'C:\temp\AmsiProvider.dll'
+            }
+         } -ParameterFilter { $AMSIProviders -eq [switch]::Present }
+         $i = (Get-PSRawAutoRun -AMSIProviders | Get-PSPrettyAutorun).ImagePath
+         # Write-Verbose -Message "-$($i)-" -Verbose
+         $i -eq 'C:\temp\AmsiProvider.dll' | should be $true
+        }
+    }
     # When ShowFileHash and VerifyDigitalSignature switches are used, don't drop items #34
     # https://github.com/p0w3rsh3ll/AutoRuns/issues/34
     # Get-PSAutorun -ShowFileHash -VerifyDigitalSignature

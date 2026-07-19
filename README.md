@@ -179,12 +179,10 @@ gp 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' -Name DisableLGPOProcessin
 
 #### OS and Software compatibility
 - [x] Test the module in PowerShell Core 7.x (latest)
-- [ ] Test the module on various versions of Windows 10
-  - [x] 21H2
-  - [x] 22H2
 - [x] Test the module on various versions of Windows 11
-  - [x] 21H2
-  - [x] 22H2
+  - [x] 23H2
+  - [ ] 25H2
+  - [ ] 26H2
 - [ ] Review Office Add-ins code with Office x86 and x64 versions
 
 #### General improvements
@@ -227,6 +225,15 @@ Get-PSAutorun -VerifyDigitalSignature | ? { -not $_.IsOSBinary }
 <a name="AutorunsHistory"/>
 
 ## Original [Autoruns.exe](https://docs.microsoft.com/en-us/sysinternals/downloads/autoruns) from Mark Russinovich
+
+[Autoruns v14.3](https://techcommunity.microsoft.com/blog/sysinternals-blog/autoruns-zoomit-coreinfo-debugview-livekd-procdump-for-linux-process-monitor-and/4528947)
+>This update to Autoruns, a utility for monitoring startup items, adds bug fixes and fully aligns the command-line autorunsc with the GUI capabilities, including packaged apps support.
+
+[Autoruns v14.2](https://techcommunity.microsoft.com/blog/sysinternals-blog/autoruns-procdump-zoomit-debugview-notmyfault-procexp-procmon-and-linux-tools/4517553)
+>This update to Autoruns, a utility for monitoring startup items, adds support for Windows packaged apps.
+
+[Autoruns v14.11](https://techcommunity.microsoft.com/t5/sysinternals-blog/procdump-3-2-for-linux-zoomit-v8-0-and-autoruns-v14-11/ba-p/4050610)
+>This update to Autoruns fixes a bug parsing parameters in startup folder items.
 
 [Autoruns v14.1](https://techcommunity.microsoft.com/t5/sysinternals-blog/sysmon-v15-0-autoruns-v14-1-and-process-monitor-v3-95/ba-p/3857916)
 >This update to Autoruns, a utility for monitoring startup items, fixes a bug with detecting non-shortcut files in startup folders, fixes a bug with handling non-UNC, non-absolute paths, and improves theming support.
