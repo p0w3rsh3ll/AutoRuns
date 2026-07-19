@@ -1966,7 +1966,6 @@ Begin {
             if ($All -or $PackagedApp) {
                 #region Packaged App
                 $Category = @{ Category = 'Packaged App'}
-
                 $Users.ForEach({ $_['Hive']}) |
                 ForEach-Object {
                         $root = $_
@@ -1975,20 +1974,17 @@ Begin {
                             (Get-Item -Path "$($root)\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData").GetSubKeyNames() |
                             ForEach-Object {
                                     $key = (Join-Path -Path "$($root)\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData" -ChildPath "$($_)")
-                                    #if ((Get-ItemProperty -Path "$($key)" -Name 'WasEverActivated' -ErrorAction SilentlyContinue).'WasEverActivated' -eq 1) {
-                                     # Write-Verbose -Message "subkey: $($_) was ever activated: $true" -Verbose
-                                     # Iterate through the subkeys
-                                     (Get-item -Path $key).GetSubKeyNames() |
-                                     Where-Object {
+                                    # Iterate through the subkeys
+                                    (Get-item -Path $key).GetSubKeyNames() |
+                                    Where-Object {
                                       $_ -notin @('PSR','Schemas','SplashScreen','HAM','PersistedTitleBarData','ApplicationFrame',
-                                      'PersistedPickerData','AppUriHandlers','PersistedStorageItemTable')
-                                     } |
-                                     ForEach-Object {
+                                      'PersistedPickerData','AppUriHandlers','PersistedStorageItemTable','PackageStateRoamingCollectionId')
+                                    } |
+                                    ForEach-Object {
                                       $s = $_
                                       $subkey = Join-Path -Path $key -ChildPath $_
                                       $appPath = (Get-ItemProperty -Path (Join-Path -Path $key -ChildPath 'Schemas') -Name 'PackageFullName' -ErrorAction SilentlyContinue).PackageFullName
                                       $appManifest = Join-Path -Path 'C:\Program Files\WindowsApps' -ChildPath "$($appPath)\AppxManifest.xml"
-
                                       if (Test-Path -Path $appManifest -PathType Leaf) {
                                        $xmlManifest = [xml](Get-Content -Path $appManifest -ErrorAction SilentlyContinue)
                                        if ( (($xmlManifest).Package.Applications.Application.Extensions.Extension |
@@ -1997,30 +1993,22 @@ Begin {
                                         $appxExec = (($xmlManifest).Package.Applications.Application.Extensions.Extension |
                                         Where-Object { $_.Category -eq 'windows.startupTask' } | Where-Object { $_.StartupTask.TaskId -eq "$($s)"} ).Executable
                                         if ($null -eq $appxExec) {
-                                         $appxExec = ($xmlManifest).Package.Applications.Application.Executable
+                                         $appxExec = (($xmlManifest).Package.Applications.Application | Where-Object { $_.Extensions.Extension.Category -eq 'windows.startupTask' }).Executable
                                         }
                                        } else {
                                         $appxExec = ($xmlManifest).Package.Applications.Application.Executable
                                        }
                                       }
-
-                                      Write-Verbose -Message "subkey: $($subkey)" -Verbose
-                                      Write-Verbose -Message "subkey appPath: $($appPath)" -Verbose
-                                      Write-Verbose -Message "subkey: appxExec: $($appxExec)" -Verbose
                                       if ($null -ne (Get-ItemProperty -Path "$($subkey)" -Name 'State' -ErrorAction SilentlyContinue).'State') {
-                                        try {
-	                                        [pscustomobject]@{
-	                                            Path = $key
-	                                            Item = $_
-	                                            Value = Join-Path -Path 'C:\Program Files\WindowsApps' -ChildPath "$($appPath)\$($appxExec)"
-                                                    Category = 'Packaged App';
-	                                        }
-                                        } catch {
-
-                                        }
+	                               [pscustomobject]@{
+	                                 Path = $key
+	                                 Item = $_
+	                                 Value = Join-Path -Path 'C:\Program Files\WindowsApps' -ChildPath "$($appPath)\$($appxExec)"
+                                         Category = 'Packaged App';
+	                                }
                                       }
-                                     }
-                                    #}
+                                    }
+
                             }
                         }
                  }
