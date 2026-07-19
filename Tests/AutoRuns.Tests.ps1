@@ -173,6 +173,21 @@ Describe 'Testing ScheduledTasks' -Tag 'ScheduledTasks' {
 
     Context 'Inside Get-PSPrettyAutorun' {
 
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/134
+        It 'issue #134 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\WINDOWS\system32\Tasks\Ubisoft\Ubisoft Connect Background Update'
+                    Item     = 'Ubisoft Connect Background Update'
+                    Category = 'Task'
+                    Value    = 'C:/Program Files (x86)/Ubisoft/Ubisoft Game Launcher/upc.exe -upc_scheduled_task update'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            # Write-Verbose -Message "-$($i)-" -Verbose
+            $i -eq 'C:\Program Files (x86)\Ubisoft\Ubisoft Game Launcher\upc.exe' | should be $true
+        }
+
         # https://github.com/p0w3rsh3ll/AutoRuns/issues/129
         It 'issue #129 should be solved' {
             Mock -CommandName Get-PSRawAutoRun -MockWith {

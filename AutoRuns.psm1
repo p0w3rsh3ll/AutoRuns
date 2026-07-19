@@ -2252,6 +2252,14 @@ Begin {
                                     )
                                     break
                                 }
+                                # ProgramFilesx86 with no quote and / instead of \
+                                '^(C:/Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)/' {
+                                    Join-Path -Path "$(${env:ProgramFiles(x86)})" -ChildPath (
+                                        @([regex]'^(C:/Program\sFiles\s\(x86\)|%ProgramFiles\(x86\)%)/(?<File>.*\.[a-z0-9]{1,})\s?').Matches($_) |
+                                        Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
+                                    )
+                                    break
+                                }
                                 # C:\Windows\System32\DriverStore\FileRepository\
                                 'C:\\Windows\\System32\\DriverStore\\FileRepository\\' {
                                     Join-Path -Path 'C:\Windows\System32\DriverStore\FileRepository' -ChildPath (
