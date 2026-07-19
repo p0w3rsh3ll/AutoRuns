@@ -1975,7 +1975,7 @@ Begin {
                             (Get-Item -Path "$($root)\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData").GetSubKeyNames() |
                             ForEach-Object {
                                     $key = (Join-Path -Path "$($root)\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData" -ChildPath "$($_)")
-                                    if ((Get-ItemProperty -Path "$($key)" -Name 'WasEverActivated' -ErrorAction SilentlyContinue).'WasEverActivated' -eq 1) {
+                                    #if ((Get-ItemProperty -Path "$($key)" -Name 'WasEverActivated' -ErrorAction SilentlyContinue).'WasEverActivated' -eq 1) {
                                      # Write-Verbose -Message "subkey: $($_) was ever activated: $true" -Verbose
                                      # Iterate through the subkeys
                                      (Get-item -Path $key).GetSubKeyNames() |
@@ -1990,16 +1990,17 @@ Begin {
                                       $appManifest = Join-Path -Path 'C:\Program Files\WindowsApps' -ChildPath "$($appPath)\AppxManifest.xml"
 
                                       if (Test-Path -Path $appManifest -PathType Leaf) {
-                                       if ( (([xml](Get-Content -Path $appManifest -ErrorAction SilentlyContinue)).Package.Applications.Application.Extensions.Extension |
+                                       $xmlManifest = [xml](Get-Content -Path $appManifest -ErrorAction SilentlyContinue)
+                                       if ( (($xmlManifest).Package.Applications.Application.Extensions.Extension |
                                         Where-Object { $_.Category -eq 'windows.startupTask' }).StartupTask.TaskId -eq "$($s)"
                                        ) {
-                                        $appxExec = (([xml](Get-Content -Path $appManifest -ErrorAction SilentlyContinue)).Package.Applications.Application.Extensions.Extension |
+                                        $appxExec = (($xmlManifest).Package.Applications.Application.Extensions.Extension |
                                         Where-Object { $_.Category -eq 'windows.startupTask' } | Where-Object { $_.StartupTask.TaskId -eq "$($s)"} ).Executable
                                         if ($null -eq $appxExec) {
-                                         $appxExec = ([xml](Get-Content -Path (Join-Path -Path 'C:\Program Files\WindowsApps' -ChildPath "$($appPath)\AppxManifest.xml") -ErrorAction SilentlyContinue)).Package.Applications.Application.Executable
+                                         $appxExec = ($xmlManifest).Package.Applications.Application.Executable
                                         }
                                        } else {
-                                        $appxExec = ([xml](Get-Content -Path (Join-Path -Path 'C:\Program Files\WindowsApps' -ChildPath "$($appPath)\AppxManifest.xml") -ErrorAction SilentlyContinue)).Package.Applications.Application.Executable
+                                        $appxExec = ($xmlManifest).Package.Applications.Application.Executable
                                        }
                                       }
 
@@ -2019,7 +2020,7 @@ Begin {
                                         }
                                       }
                                      }
-                                    }
+                                    #}
                             }
                         }
                  }
