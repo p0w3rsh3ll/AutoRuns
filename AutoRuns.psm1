@@ -1969,7 +1969,6 @@ Begin {
                 $Users.ForEach({ $_['Hive']}) |
                 ForEach-Object {
                         $root = $_
-                        Write-Verbose -Message "root: $($_)" -Verbose
                         if (Test-Path -Path "$($root)\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData" -PathType Container) {
                             (Get-Item -Path "$($root)\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData").GetSubKeyNames() |
                             ForEach-Object {
