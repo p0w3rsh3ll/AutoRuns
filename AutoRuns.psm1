@@ -2647,6 +2647,10 @@ Begin {
                                         Join-Path -Path "$($env:SystemRoot)\system32" -ChildPath 'servercoreshelllaunch.bat'
                                         break
                                     }
+                                    '^C:\\System.sav\\' {
+                                        $_
+                                        break
+                                    }
                                     default {
                                         Write-Verbose -Message "default: $_"
                                         [string]::Empty

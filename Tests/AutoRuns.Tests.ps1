@@ -822,6 +822,19 @@ Describe 'Testing Get-PSPrettyAutorun for WMI' -Tag 'WMI' {
 
 Describe 'Testing Get-PSPrettyAutorun for Logon' -Tag 'Logon' {
 
+    It 'issue 141 should be solved' {
+        Mock -CommandName Get-PSRawAutoRun -MockWith {
+            return [PSCustomObject]@{
+                Path     = 'HKU:\S-1-5-19\Software\\Microsoft\Windows\CurrentVersion\Run'
+                Item     = 'HPSEU_Host_Launcher'
+                Category = 'Logon'
+                Value    = 'C:\System.sav\util\HPSEU\HpseuHostLauncher.exe'
+            }
+        } -ParameterFilter { $Logon -eq [switch]::Present }
+        $i = (Get-PSRawAutoRun -Logon | Get-PSPrettyAutorun).ImagePath
+        $i -eq 'C:\System.sav\util\HPSEU\HpseuHostLauncher.exe' | should be $true
+    }
+
     It 'issue 125 should be solved' {
         Mock -CommandName Get-PSRawAutoRun -MockWith {
             return [PSCustomObject]@{
