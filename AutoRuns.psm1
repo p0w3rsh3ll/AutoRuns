@@ -1980,6 +1980,7 @@ Begin {
                                       'PersistedPickerData','AppUriHandlers','PersistedStorageItemTable','PackageStateRoamingCollectionId')
                                     } |
                                     ForEach-Object {
+                                      $appxExec = $appPath = $appManifest = $xmlManifest = $null
                                       $s = $_
                                       $subkey = Join-Path -Path $key -ChildPath $_
                                       $appPath = (Get-ItemProperty -Path (Join-Path -Path $key -ChildPath 'Schemas') -Name 'PackageFullName' -ErrorAction SilentlyContinue).PackageFullName
