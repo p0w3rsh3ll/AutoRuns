@@ -2124,9 +2124,9 @@ Begin {
                                     break
                                 }
                                 # Windir\system32
-                                '^"?(%(w|W)(i|I)(n|N)(d|D)(i|I)(r|R)%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\.[^\\]+\.(exe|vbs)' {
+                                '^"?(%(w|W)(i|I)(n|N)(d|D)(i|I)(r|R)%|%(s|S)ystem(r|R)oot%|(c|C):\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\.[^\\]+\.(exe|vbs)' {
                                     Join-Path -Path "$($env:systemroot)\system32" -ChildPath (
-                                        @([regex]'^"?(%(w|W)(i|I)(n|N)(d|D)(i|I)(r|R)%|%(s|S)ystem(r|R)oot%|C:\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\(?<File>.[^\\]+\.(exe|vbs))("|\s)?').Matches($_) |
+                                        @([regex]'^"?(%(w|W)(i|I)(n|N)(d|D)(i|I)(r|R)%|%(s|S)ystem(r|R)oot%|(C|c):\\[Ww][iI][nN][dD][oO][Ww][sS])\\(s|S)ystem32\\(?<File>.[^\\]+\.(exe|vbs))("|\s)?').Matches($_) |
                                         Select-Object -Expand Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value
                                     )
                                     break

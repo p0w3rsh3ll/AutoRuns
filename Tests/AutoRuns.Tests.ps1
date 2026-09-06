@@ -173,6 +173,20 @@ Describe 'Testing ScheduledTasks' -Tag 'ScheduledTasks' {
 
     Context 'Inside Get-PSPrettyAutorun' {
 
+        # https://github.com/p0w3rsh3ll/AutoRuns/issues/139
+        It 'issue #139 should be solved' {
+            Mock -CommandName Get-PSRawAutoRun -MockWith {
+                return [PSCustomObject]@{
+                    Path     = 'C:\WINDOWS\system32\Tasks\Hewlett-Packard\HP Diagnostics\Uninstall-BatteryStatusTest'
+                    Item     = 'Uninstall-BatteryStatusTest'
+                    Category = 'Task'
+                    Value    = 'c:\windows\system32\schtasks.exe /Change /Disable /tn "\Hewlett-Packard\HP Diagnostics\BatteryStatusTest"'
+                }
+            } -ParameterFilter { $ScheduledTasks -eq [switch]::Present }
+            $i = (Get-PSRawAutoRun -ScheduledTasks | Get-PSPrettyAutorun).ImagePath
+            $i -eq 'C:\windows\system32\schtasks.exe' | should be $true
+        }
+
         # https://github.com/p0w3rsh3ll/AutoRuns/issues/134
         It 'issue #134 should be solved' {
             Mock -CommandName Get-PSRawAutoRun -MockWith {
